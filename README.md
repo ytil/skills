@@ -30,29 +30,49 @@ Copy a skill directory into the target agent's skills folder.
 
 ### Install with `npx skills`
 
-For Agent Skills-compatible tools such as OpenCode, the easiest path is the
-`skills` CLI. First list the skills exposed by this repository:
+For Agent Skills-compatible tools, the easiest path is the `skills` CLI. First
+list the skills exposed by this repository:
 
 ```bash
 npx skills add ytil/skills --list
 ```
 
-Install selected skills globally for OpenCode:
+Install a selected skill globally for one agent:
 
 ```bash
 npx skills add ytil/skills \
   --skill <skill-name> \
+  --agent codex \
+  --global
+```
+
+Supported agent names:
+
+```text
+cursor       Cursor
+codex        Codex
+claude-code  Claude Code
+opencode     OpenCode
+```
+
+Install a selected skill globally for all four:
+
+```bash
+npx skills add ytil/skills \
+  --skill <skill-name> \
+  --agent cursor \
+  --agent codex \
+  --agent claude-code \
   --agent opencode \
   --global
 ```
 
-For private repositories, prefer an SSH URL so the CLI can use your existing
-GitHub SSH credentials:
+For private repositories, prefer an SSH URL:
 
 ```bash
 npx skills add git@github.com:ytil/skills.git \
   --skill <skill-name> \
-  --agent opencode \
+  --agent codex \
   --global
 ```
 
@@ -61,7 +81,7 @@ For non-interactive scripts, add `--yes`:
 ```bash
 npx skills add git@github.com:ytil/skills.git \
   --skill <skill-name> \
-  --agent opencode \
+  --agent codex \
   --global \
   --yes
 ```
@@ -71,30 +91,29 @@ To avoid anonymous telemetry from the `skills` CLI, set
 
 ### Manual install
 
-For Codex:
+Global paths:
 
-```bash
-cp -R skills/<skill-name> ~/.codex/skills/<skill-name>
+```text
+Cursor       ~/.cursor/skills/<skill-name>
+Codex        ~/.codex/skills/<skill-name>
+Claude Code  ~/.claude/skills/<skill-name>
+OpenCode     ~/.config/opencode/skills/<skill-name>
 ```
 
-For Claude Code:
+Project-local paths:
 
-```bash
-cp -R skills/<skill-name> ~/.claude/skills/<skill-name>
+```text
+Cursor       .agents/skills/<skill-name>
+Codex        .agents/skills/<skill-name>
+Claude Code  .claude/skills/<skill-name>
+OpenCode     .agents/skills/<skill-name>
 ```
 
-For OpenCode global usage:
+Copy a skill manually:
 
 ```bash
-mkdir -p ~/.config/opencode/skills
-cp -R skills/<skill-name> ~/.config/opencode/skills/<skill-name>
-```
-
-For OpenCode project-local usage, copy into the target project:
-
-```bash
-mkdir -p .opencode/skills
-cp -R skills/<skill-name> .opencode/skills/<skill-name>
+mkdir -p <target-skills-dir>
+cp -R skills/<skill-name> <target-skills-dir>/<skill-name>
 ```
 
 Restart the agent after installing or updating a skill.
