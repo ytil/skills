@@ -7,6 +7,7 @@ Personal agent skills for Codex, Claude Code, and other Agent Skills-compatible 
 - `brainstorming-handoff` - clarify feature, refactor, product, or behavior ideas before implementation and end with a structured design handoff.
 - `code-simplifier` - simplify and refine recently changed code while preserving behavior.
 - `karpathy-guidelines` - reduce LLM coding mistakes with explicit assumptions, simplicity, surgical changes, and verifiable success criteria.
+- `zip-context` - create a clean project-context zip archive for model handoff. Original repo: https://github.com/glebkudr/zip_context.
 
 ## Layout
 
@@ -22,6 +23,12 @@ skills/
     SKILL.md
     agents/
       openai.yaml
+  zip-context/
+    SKILL.md
+    agents/
+      openai.yaml
+    scripts/
+      zip_context.py
 ```
 
 ## Usage
