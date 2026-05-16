@@ -40,8 +40,8 @@ python3 "$ZIP_CONTEXT" zip --root /path/to/project --paths-file /tmp/billing-pat
 ## Workflow
 
 1. Resolve the project root. Prefer the current repository root; otherwise use `--root` or the current directory.
-2. Check whether `zip_context_ignore.md` exists and has the expected marked blocks.
-3. If `zip_context_ignore.md` is missing or invalid, stop and ask for it to be edited manually. Do not create, rewrite, refresh, or auto-fix it.
+2. Check whether `zip_context_ignore.md` exists.
+3. If `zip_context_ignore.md` is missing, stop and ask for it to be created manually. Do not create, rewrite, refresh, or auto-fix it.
 4. Decide whether the request is broad or focused:
    - if the user asks for the full project or gives no scope, use the default full-project archive flow;
    - if the user names a subsystem, feature, task, bug, endpoint, or area such as "billing", first inspect the repo and build a focused list of relevant paths.
@@ -62,7 +62,7 @@ python3 "$ZIP_CONTEXT" zip --root /path/to/project --paths-file /tmp/billing-pat
 
 The project-local ignore file is always `zip_context_ignore.md` in the project root.
 
-The bundled script reads both marked blocks as manual ignore patterns. It does not create, rewrite, refresh, or auto-fix either block. If the user wants to change archive contents, edit `zip_context_ignore.md` manually.
+`zip_context_ignore.md` is a plain newline-delimited ignore file, similar to `.gitignore`. Blank lines and `#` comments are ignored. Each remaining line is treated as a path, directory, or glob pattern. The bundled script does not create, rewrite, refresh, or auto-fix this file. If the user wants to change archive contents, edit `zip_context_ignore.md` manually.
 
 ## Commands
 
@@ -74,7 +74,7 @@ python3 "$ZIP_CONTEXT" [zip] [--root PATH] [--output PATH] [--paths-file PATH]
 
 Command semantics:
 
-- `zip`: read `zip_context_ignore.md` and build the archive. Fail if the ignore file is missing or invalid; do not edit it automatically.
+- `zip`: read `zip_context_ignore.md` as a plain ignore-pattern list and build the archive. Fail if the ignore file is missing; do not edit it automatically.
 - `zip --paths-file <file>`: build a focused archive from a prepared newline-delimited list of repo-relative or absolute paths. Directories in the list are expanded recursively.
 
 If the user only asks to “zip”, “pack the project”, “prepare context for an architect”, or similar, run `zip`.
@@ -83,7 +83,7 @@ If the user asks for “files of the billing subsystem”, “only auth-related 
 ## Guardrails
 
 - Prefer the current project root unless the user gave another path.
-- Require `zip_context_ignore.md` to exist and be valid before zipping.
+- Require `zip_context_ignore.md` to exist before zipping. Treat it as a plain `.gitignore`-style list of path, directory, and glob patterns.
 - For focused requests, include the files that help another model understand the scoped area: entrypoints, handlers, domain logic, schemas, migrations, configs, tests, and nearby docs when they are relevant.
 - Do not widen a focused request into a whole-project archive unless the user asked for that broader scope.
 - Exclude only paths matched by `zip_context_ignore.md`; do not exclude `.gitignore`, assets, archives, generated files, or the output archive unless the ignore file says so.

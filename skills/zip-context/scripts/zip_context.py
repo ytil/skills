@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 import subprocess
 import sys
 import zipfile
@@ -15,10 +14,6 @@ from pathlib import Path, PurePosixPath
 
 
 IGNORE_FILE_NAME = "zip_context_ignore.md"
-GENERATED_START = "<!-- zip-context:generated:start -->"
-GENERATED_END = "<!-- zip-context:generated:end -->"
-EXTRA_START = "<!-- zip-context:extra:start -->"
-EXTRA_END = "<!-- zip-context:extra:end -->"
 
 
 @dataclass(frozen=True)
@@ -31,8 +26,7 @@ class ProjectSetup:
 
 @dataclass(frozen=True)
 class IgnoreState:
-    generated_patterns: list[str]
-    extra_patterns: list[str]
+    patterns: list[str]
 
 
 @dataclass(frozen=True)
@@ -107,7 +101,7 @@ def main() -> int:
     print(f"{IGNORE_FILE_NAME}: loaded")
 
     output_path = args.output.resolve() if args.output else default_output_path(setup.root)
-    ignore_patterns = ignore_state.generated_patterns + ignore_state.extra_patterns
+    ignore_patterns = ignore_state.patterns
     if args.paths_file is not None:
         try:
             explicit_candidates, explicit_missing_paths = load_explicit_candidate_paths(
@@ -188,42 +182,12 @@ def load_ignore_file(setup: ProjectSetup) -> IgnoreState:
             f"{IGNORE_FILE_NAME} not found. Create it manually before running zip."
         )
 
-    parsed = parse_ignore_file(setup.ignore_file)
-    if parsed is None:
-        raise ValueError(
-            f"{IGNORE_FILE_NAME} has invalid format. Keep the generated and extra marked blocks, then edit patterns manually."
-        )
-
-    generated_patterns, extra_patterns = parsed
-    return IgnoreState(
-        generated_patterns=generated_patterns,
-        extra_patterns=extra_patterns,
-    )
+    return IgnoreState(patterns=parse_ignore_file(setup.ignore_file))
 
 
-def parse_ignore_file(path: Path) -> tuple[list[str], list[str]] | None:
-    text = path.read_text(encoding="utf-8")
-    generated_block = extract_marked_block(text, GENERATED_START, GENERATED_END)
-    extra_block = extract_marked_block(text, EXTRA_START, EXTRA_END)
-    if generated_block is None or extra_block is None:
-        return None
-    return parse_patterns_block(generated_block), parse_patterns_block(extra_block)
-
-
-def extract_marked_block(text: str, start_marker: str, end_marker: str) -> str | None:
-    pattern = re.compile(
-        rf"{re.escape(start_marker)}\s*```[^\n]*\n(.*?)\n```\s*{re.escape(end_marker)}",
-        re.DOTALL,
-    )
-    match = pattern.search(text)
-    if match is None:
-        return None
-    return match.group(1)
-
-
-def parse_patterns_block(block: str) -> list[str]:
+def parse_ignore_file(path: Path) -> list[str]:
     patterns: list[str] = []
-    for raw_line in block.splitlines():
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
