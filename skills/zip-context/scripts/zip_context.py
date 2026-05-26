@@ -319,34 +319,42 @@ def walk_filesystem(root: Path, ignore_patterns: list[str]) -> list[Path]:
 
 
 def should_ignore_path(path_string: str, ignore_patterns: list[str]) -> bool:
+    ignored = False
+    for pattern in ignore_patterns:
+        is_negation = pattern.startswith("!")
+        match_pattern = pattern[1:] if is_negation else pattern
+        if not match_pattern:
+            continue
+
+        if matches_ignore_pattern(path_string, match_pattern):
+            ignored = not is_negation
+
+    return ignored
+
+
+def matches_ignore_pattern(path_string: str, pattern: str) -> bool:
     path_name = PurePosixPath(path_string).name
     path_parts = PurePosixPath(path_string).parts
 
-    for pattern in ignore_patterns:
-        if pattern.endswith("/"):
-            directory = pattern.rstrip("/")
-            if "/" in directory:
-                if path_string == directory or path_string.startswith(f"{directory}/"):
-                    return True
-                continue
-            if directory in path_parts:
+    if pattern.endswith("/"):
+        directory = pattern.rstrip("/")
+        if "/" in directory:
+            if path_string == directory or path_string.startswith(f"{directory}/"):
                 return True
-            continue
+            return False
+        return directory in path_parts
 
-        if any(char in pattern for char in "*?["):
-            if fnmatchcase(path_string, pattern) or fnmatchcase(path_name, pattern):
-                return True
-            continue
-
-        if "/" in pattern:
-            if path_string == pattern:
-                return True
-            continue
-
-        if path_string == pattern or path_name == pattern:
+    if any(char in pattern for char in "*?["):
+        if fnmatchcase(path_string, pattern) or fnmatchcase(path_name, pattern):
             return True
+        return False
 
-    return False
+    if "/" in pattern:
+        if path_string == pattern:
+            return True
+        return False
+
+    return path_string == pattern or path_name == pattern
 
 
 def write_archive(repo_root: Path, relative_paths: list[Path], output_path: Path) -> ArchiveSummary:
