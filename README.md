@@ -4,6 +4,7 @@ Personal agent skills for Codex, Claude Code, and other Agent Skills-compatible 
 
 ## Skills
 
+- `agents-md` - write or review AGENTS.md/CLAUDE.md agent-context files: ten principles, a verification-first review checklist, and AGENTS.md↔CLAUDE.md cross-tool interop. Sourced from [HumanLayer's "Writing a good CLAUDE.md"](https://www.humanlayer.dev/blog/writing-a-good-claude-md).
 - `brainstorming-handoff` - clarify feature, refactor, product, or behavior ideas before implementation and end with a structured design handoff.
 - `code-simplifier` - simplify and refine recently changed code while preserving behavior.
 - `karpathy-guidelines` - reduce LLM coding mistakes with explicit assumptions, simplicity, surgical changes, and verifiable success criteria.
@@ -13,6 +14,13 @@ Personal agent skills for Codex, Claude Code, and other Agent Skills-compatible 
 
 ```text
 skills/
+  agents-md/
+    SKILL.md
+    references/
+      review-checklist.md
+      cross-tool-reference.md
+    agents/
+      openai.yaml
   brainstorming-handoff/
     SKILL.md
   code-simplifier/

@@ -1,3 +1,6 @@
 .DS_Store
 node_modules/
 .brainstorming-handoff/
+
+# skill-creator eval workspaces — scratch test outputs, may contain private project details
+*-workspace/
