@@ -11,6 +11,14 @@ Personal agent skills for Codex, Claude Code, and other Agent Skills-compatible 
 ## Layout
 
 ```text
+.agents/
+  plugins/
+    marketplace.json   # Codex plugin marketplace
+.claude-plugin/
+  marketplace.json     # Claude Code plugin marketplace
+  plugin.json          # Claude Code plugin manifest
+.codex-plugin/
+  plugin.json          # Codex plugin manifest
 skills/
   agents-md/
     SKILL.md
@@ -30,6 +38,31 @@ skills/
 ```
 
 ## Usage
+
+### Install as a plugin
+
+The repo is a plugin marketplace for both Claude Code and Codex. Both plugins
+bundle all skills from `skills/`.
+
+Claude Code (inside a `claude` session):
+
+```text
+/plugin marketplace add ytil/skills
+/plugin install ytil-skills@ytil-skills
+```
+
+Installed skills are invoked as `ytil-skills:<skill-name>`.
+
+Codex:
+
+```bash
+codex plugin marketplace add ytil/skills
+codex plugin add ytil-skills@ytil-skills
+```
+
+Or browse via `/plugins` in the Codex TUI.
+
+### Install as plain skills
 
 Copy a skill directory into the target agent's skills folder.
 

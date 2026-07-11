@@ -1,0 +1,15 @@
+{
+  "name": "ytil-skills",
+  "interface": {
+    "displayName": "ytil skills"
+  },
+  "plugins": [
+    {
+      "name": "ytil-skills",
+      "source": {
+        "source": "local",
+        "path": "."
+      }
+    }
+  ]
+}

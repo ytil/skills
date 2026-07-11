@@ -1,0 +1,18 @@
+{
+  "name": "ytil-skills",
+  "version": "1.0.0",
+  "description": "Personal agent skills: write/review AGENTS.md and CLAUDE.md, brainstorm ideas into a design handoff, pack a clean project-context zip.",
+  "author": {
+    "name": "Dmitrii Ivannikov",
+    "email": "ivannikov.web@gmail.com"
+  },
+  "homepage": "https://github.com/ytil/skills",
+  "repository": "https://github.com/ytil/skills",
+  "license": "MIT",
+  "keywords": ["skills", "agents-md", "brainstorming", "zip-context"],
+  "skills": [
+    "./skills/agents-md",
+    "./skills/brainstorming-handoff",
+    "./skills/zip-context"
+  ]
+}
