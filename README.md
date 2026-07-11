@@ -6,8 +6,6 @@ Personal agent skills for Codex, Claude Code, and other Agent Skills-compatible 
 
 - `agents-md` - write or review AGENTS.md/CLAUDE.md agent-context files: ten principles, a verification-first review checklist, and AGENTS.md↔CLAUDE.md cross-tool interop. Sourced from [HumanLayer's "Writing a good CLAUDE.md"](https://www.humanlayer.dev/blog/writing-a-good-claude-md).
 - `brainstorming-handoff` - clarify feature, refactor, product, or behavior ideas before implementation and end with a structured design handoff.
-- `code-simplifier` - simplify and refine recently changed code while preserving behavior.
-- `karpathy-guidelines` - reduce LLM coding mistakes with explicit assumptions, simplicity, surgical changes, and verifiable success criteria.
 - `zip-context` - create a clean project-context zip archive for model handoff. Original repo: https://github.com/glebkudr/zip_context.
 
 ## Layout
@@ -23,14 +21,6 @@ skills/
       openai.yaml
   brainstorming-handoff/
     SKILL.md
-  code-simplifier/
-    SKILL.md
-    agents/
-      openai.yaml
-  karpathy-guidelines/
-    SKILL.md
-    agents/
-      openai.yaml
   zip-context/
     SKILL.md
     agents/
