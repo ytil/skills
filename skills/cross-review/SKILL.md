@@ -13,19 +13,20 @@ Run one read-only task through a 5-call pipeline:
 
 The verdict is printed to stdout; a full report (all 5 artifacts + metadata) is saved to `~/.cache/cross-review/<timestamp>-<slug>/report.md`.
 
-The orchestrator is a bundled script:
+The orchestrator is a bundled TypeScript script (runs directly via Node's native
+type stripping — requires Node 22.18+ / 24):
 
 ```
-<skill base directory>/scripts/cross-review.mjs
+<skill base directory>/scripts/cross-review.ts
 ```
 
-Resolve the path from this skill's base directory (Claude Code shows it when the skill loads; in Codex it is `$CODEX_HOME/skills/cross-review/scripts/cross-review.mjs`). On first run the script installs its own npm dependencies.
+Resolve the path from this skill's base directory (Claude Code shows it when the skill loads; in Codex it is `$CODEX_HOME/skills/cross-review/scripts/cross-review.ts`). On first run the script installs its own npm dependencies.
 
 ## Script interface
 
 ```
-node cross-review.mjs "<task text>" [options]
-echo "<long task>" | node cross-review.mjs - [options]
+node cross-review.ts "<task text>" [options]
+echo "<long task>" | node cross-review.ts - [options]
 
 --claude=<model>:<effort>                      Claude side: its analysis + its review
 --codex=<model>:<effort>                       Codex side: its analysis + its review
@@ -43,10 +44,19 @@ Rules:
 - effort: `minimal | low | medium | high | xhigh | max | ultracode` (`minimal` is Codex-only).
 - `ultracode` maps to the ultracode multi-agent keyword for Claude and to `model_reasoning_effort=ultra` for Codex. Codex `ultra` requires a GPT-5.6 model (use `gpt-5.6-sol`).
 
-Default models when the user names only an effort:
+Model naming — concrete slugs only:
 
-- Claude: alias `opus` (or `fable` if the user asks for maximum quality).
-- Codex: the `model` key from `~/.codex/config.toml` if set, otherwise `gpt-5.6-sol`.
+- Always pass a CONCRETE model slug in role flags, never an alias: "sonnet"/"opus" are
+  ambiguous across releases. Resolve the user's alias to the current model id yourself
+  (your harness lists current Claude model ids; for Codex check `~/.codex/config.toml`
+  and the current lineup, e.g. `gpt-5.6-sol` / `gpt-5.6-terra` / `gpt-5.6-luna`) and show
+  the resolved slug in the approval gate — the user confirms it before launch.
+- When the user names only an effort, pick the model too: Claude — the current Opus slug
+  (or Fable if the user asks for maximum quality); Codex — the `model` key from
+  `~/.codex/config.toml` if set, otherwise `gpt-5.6-sol`.
+- There is deliberately NO model map in the script: model×effort compatibility is
+  validated by the CLIs themselves, and the report records which models actually ran
+  (`models actually used` line + `resolvedModels` in meta.json).
 
 ## Workflow
 
@@ -54,6 +64,8 @@ Default models when the user names only an effort:
 2. Build the flag set: translate natural-language wishes ("codex на максимум, синтез экономно") into full-form flags.
 3. **Approval gate (mandatory).** Before every launch, show the resolved parameters via the Ask tool (AskUserQuestion in Claude Code, the user-question mechanism in Codex) and wait for explicit approval:
     - Show: task, claude model:effort, codex model:effort, synthesizer, cwd, report dir.
+    - Model fields must be concrete slugs (aliases resolved by you), so the user sees
+      exactly what will run.
     - Options: **"Запустить"** / **"Изменить параметры"** (free-text changes → rebuild flags → show the gate again).
     - Parameters the user did not specify are shown as "CLI default".
 4. Launch the script with Bash `run_in_background` — a run takes 5–15+ minutes (more with ultracode). Do not block on it; check progress via the background task output (the script logs phase progress to stderr).

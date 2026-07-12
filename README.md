@@ -35,8 +35,9 @@ skills/
     agents/
       openai.yaml
     scripts/
-      cross-review.mjs
+      cross-review.ts
       package.json
+      tsconfig.json
       lib/
   zip-context/
     SKILL.md

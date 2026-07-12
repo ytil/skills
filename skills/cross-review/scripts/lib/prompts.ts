@@ -12,7 +12,7 @@ const COMMON_RULES = `Rules:
 - Separate facts you verified in the code from assumptions; label assumptions explicitly.
 - Answer in the same language as the task statement.`;
 
-export function analysisPrompt(task) {
+export function analysisPrompt(task: string): string {
     return `You are performing an independent expert analysis of a task against a real repository.
 
 ${COMMON_RULES}
@@ -26,7 +26,7 @@ Task:
 ${task}`;
 }
 
-export function reviewPrompt(task, opponentAnalysis) {
+export function reviewPrompt(task: string, opponentAnalysis: string): string {
     return `Another engineer independently analyzed the task below against the same repository.
 Your job is to cross-review their analysis. Be adversarial but fair: your value is in
 catching what is wrong or missing, not in agreeing.
@@ -48,13 +48,21 @@ ${opponentAnalysis}
 ---`;
 }
 
+export interface SynthesisInput {
+    task: string;
+    analysisA: string;
+    analysisB: string;
+    reviewOfA: string | null;
+    reviewOfB: string | null;
+}
+
 export function synthesisPrompt({
     task,
     analysisA,
     analysisB,
     reviewOfA,
     reviewOfB,
-}) {
+}: SynthesisInput): string {
     const reviewASection = reviewOfA
         ? `## Review of Agent A's analysis (written by Agent B)
 ${reviewOfA}`

@@ -1,19 +1,29 @@
 import { spawnSync } from "node:child_process";
-import { query } from "@anthropic-ai/claude-agent-sdk";
+import { query, type Options } from "@anthropic-ai/claude-agent-sdk";
+
+import type { Effort, RunParams, RunResult } from "./types.ts";
 
 // Claude effort levels accepted by the Agent SDK; "ultracode" is handled
 // separately (prompt keyword + effort max).
-const CLAUDE_EFFORTS = ["low", "medium", "high", "xhigh", "max"];
+const CLAUDE_EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
+type ClaudeEffort = (typeof CLAUDE_EFFORTS)[number];
 
-export function validateClaudeEffort(effort, flagName) {
+function isClaudeEffort(effort: Effort): effort is ClaudeEffort {
+    return (CLAUDE_EFFORTS as readonly string[]).includes(effort);
+}
+
+export function validateClaudeEffort(
+    effort: Effort | null | undefined,
+    flagName: string,
+): string | null {
     if (effort === null || effort === undefined) return null;
-    if (effort === "ultracode" || CLAUDE_EFFORTS.includes(effort)) return null;
+    if (effort === "ultracode" || isClaudeEffort(effort)) return null;
     return `${flagName}: effort "${effort}" is not supported for Claude (use ${CLAUDE_EFFORTS.join(
         "/",
     )}/ultracode)`;
 }
 
-export async function preflightClaude() {
+export async function preflightClaude(): Promise<string | null> {
     const res = spawnSync("claude", ["--version"], { encoding: "utf8" });
     if (res.error || res.status !== 0) {
         return (
@@ -26,14 +36,19 @@ export async function preflightClaude() {
 
 // Read-only discipline lives in the PROMPT (owner's decision): the agent runs
 // with bypassPermissions so any read command is available without prompting.
-export async function runClaude({ prompt, role, cwd, timeoutMs }) {
+export async function runClaude({
+    prompt,
+    role,
+    cwd,
+    timeoutMs,
+}: RunParams): Promise<RunResult> {
     const isUltracode = role?.effort === "ultracode";
     const finalPrompt = isUltracode ? `ultracode\n\n${prompt}` : prompt;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    const options = {
+    const options: Options = {
         cwd,
         permissionMode: "bypassPermissions",
         // Owner's decision: agents behave like a regular session — global skills,
@@ -43,12 +58,20 @@ export async function runClaude({ prompt, role, cwd, timeoutMs }) {
         abortController: controller,
     };
     if (role?.model) options.model = role.model;
-    if (role?.effort) options.effort = isUltracode ? "max" : role.effort;
+    if (role?.effort) {
+        options.effort = isUltracode ? "max" : (role.effort as ClaudeEffort);
+    }
 
     try {
-        let resultText = null;
-        let errorSubtype = null;
+        let resultText: string | null = null;
+        let errorSubtype: string | null = null;
+        let resolvedModel: string | null = null;
         for await (const message of query({ prompt: finalPrompt, options })) {
+            // The init message carries the RESOLVED model id (aliases like
+            // "sonnet" expanded) — recorded in the report for reproducibility.
+            if (message.type === "system" && message.subtype === "init") {
+                resolvedModel = message.model ?? null;
+            }
             if (message.type === "result") {
                 if (message.subtype === "success") resultText = message.result;
                 else errorSubtype = message.subtype;
@@ -59,7 +82,7 @@ export async function runClaude({ prompt, role, cwd, timeoutMs }) {
                 `claude run ended without a result (${errorSubtype ?? "no result message"})`,
             );
         }
-        return resultText;
+        return { text: resultText, model: resolvedModel };
     } catch (err) {
         if (controller.signal.aborted) {
             throw new Error(
