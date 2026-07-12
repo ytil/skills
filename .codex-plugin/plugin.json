@@ -1,6 +1,6 @@
 {
     "name": "ytil-skills",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "Personal agent skills: write/review AGENTS.md and CLAUDE.md, brainstorm ideas into a design handoff, pack a clean project-context zip, cross-review a task in Claude + Codex.",
     "author": {
         "name": "Dmitrii Ivannikov",

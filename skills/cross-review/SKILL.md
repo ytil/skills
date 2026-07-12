@@ -20,7 +20,9 @@ type stripping — requires Node 22.18+ / 24):
 <skill base directory>/scripts/cross-review.ts
 ```
 
-Resolve the path from this skill's base directory (Claude Code shows it when the skill loads; in Codex it is `$CODEX_HOME/skills/cross-review/scripts/cross-review.ts`). On first run the script installs its own npm dependencies.
+Resolve the path from this skill's base directory (Claude Code shows it when the skill loads; in Codex it is `$CODEX_HOME/skills/cross-review/scripts/cross-review.ts`).
+
+Dependencies are NOT self-installed: if `scripts/node_modules` is missing (first use, or after a plugin update replaced the cache), run `npm install --no-fund --no-audit` in the `scripts/` directory before launching.
 
 ## Script interface
 
