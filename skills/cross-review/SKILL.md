@@ -53,9 +53,9 @@ Default models when the user names only an effort:
 1. Extract the task text and any run parameters (models, efforts, synthesizer) from the user's request.
 2. Build the flag set: translate natural-language wishes ("codex на максимум, синтез экономно") into full-form flags.
 3. **Approval gate (mandatory).** Before every launch, show the resolved parameters via the Ask tool (AskUserQuestion in Claude Code, the user-question mechanism in Codex) and wait for explicit approval:
-   - Show: task, claude model:effort, codex model:effort, synthesizer, cwd, report dir.
-   - Options: **"Запустить"** / **"Изменить параметры"** (free-text changes → rebuild flags → show the gate again).
-   - Parameters the user did not specify are shown as "CLI default".
+    - Show: task, claude model:effort, codex model:effort, synthesizer, cwd, report dir.
+    - Options: **"Запустить"** / **"Изменить параметры"** (free-text changes → rebuild flags → show the gate again).
+    - Parameters the user did not specify are shown as "CLI default".
 4. Launch the script with Bash `run_in_background` — a run takes 5–15+ minutes (more with ultracode). Do not block on it; check progress via the background task output (the script logs phase progress to stderr).
 5. When the script finishes, relay the verdict from stdout to the user verbatim and give the report path. Do not re-summarize or editorialize the verdict.
 6. On a non-zero exit, show the script's stderr error as-is — validation, auth, and usage-limit errors are self-describing (e.g. Codex limit exhaustion names the reset time).

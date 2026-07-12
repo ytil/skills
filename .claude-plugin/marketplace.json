@@ -1,16 +1,16 @@
 {
-  "name": "ytil-skills",
-  "owner": {
-    "name": "Dmitrii Ivannikov",
-    "email": "ivannikov.web@gmail.com"
-  },
-  "description": "Personal agent skills: agents-md, brainstorming-handoff, cross-review, zip-context",
-  "plugins": [
-    {
-      "name": "ytil-skills",
-      "source": ".",
-      "description": "All skills from this repo: write/review AGENTS.md and CLAUDE.md, brainstorm ideas into a design handoff, pack a clean project-context zip, cross-review a task in Claude + Codex.",
-      "version": "1.1.0"
-    }
-  ]
+    "name": "ytil-skills",
+    "owner": {
+        "name": "Dmitrii Ivannikov",
+        "email": "ivannikov.web@gmail.com"
+    },
+    "description": "Personal agent skills: agents-md, brainstorming-handoff, cross-review, zip-context",
+    "plugins": [
+        {
+            "name": "ytil-skills",
+            "source": ".",
+            "description": "All skills from this repo: write/review AGENTS.md and CLAUDE.md, brainstorm ideas into a design handoff, pack a clean project-context zip, cross-review a task in Claude + Codex.",
+            "version": "1.1.0"
+        }
+    ]
 }

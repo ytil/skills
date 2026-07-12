@@ -43,18 +43,18 @@ python3 "$ZIP_CONTEXT" zip --root /path/to/project --paths-file /tmp/billing-pat
 2. Check whether `zip_context_ignore.md` exists.
 3. If `zip_context_ignore.md` is missing, stop and ask for it to be created manually. Do not create, rewrite, refresh, or auto-fix it.
 4. Decide whether the request is broad or focused:
-   - if the user asks for the full project or gives no scope, use the default full-project archive flow;
-   - if the user names a subsystem, feature, task, bug, endpoint, or area such as "billing", first inspect the repo and build a focused list of relevant paths.
+    - if the user asks for the full project or gives no scope, use the default full-project archive flow;
+    - if the user names a subsystem, feature, task, bug, endpoint, or area such as "billing", first inspect the repo and build a focused list of relevant paths.
 5. For a focused request, inspect the repo before zipping:
-   - use `rg`, existing tests, docs, routes, schemas, configs, migrations, and entrypoints to find the files tied to the request;
-   - write a newline-delimited manifest with repo-relative paths or directories;
-   - prefer a disposable manifest path such as `/tmp/<scope>-paths.txt`.
+    - use `rg`, existing tests, docs, routes, schemas, configs, migrations, and entrypoints to find the files tied to the request;
+    - write a newline-delimited manifest with repo-relative paths or directories;
+    - prefer a disposable manifest path such as `/tmp/<scope>-paths.txt`.
 6. If the command is `zip`, choose the candidate source:
-   - full-project mode: walk the filesystem and filter with `zip_context_ignore.md`; do not use `.gitignore` or Git exclude rules as archive rules;
-   - focused mode: pass the prepared manifest with `--paths-file`.
+    - full-project mode: walk the filesystem and filter with `zip_context_ignore.md`; do not use `.gitignore` or Git exclude rules as archive rules;
+    - focused mode: pass the prepared manifest with `--paths-file`.
 7. Filter candidates:
-   - full-project mode respects only the patterns in `zip_context_ignore.md`;
-   - focused mode keeps the explicit scope even if some files live under normally ignored generated/build directories.
+    - full-project mode respects only the patterns in `zip_context_ignore.md`;
+    - focused mode keeps the explicit scope even if some files live under normally ignored generated/build directories.
 8. Keep everything that is not excluded by `zip_context_ignore.md`, including dotfiles, assets, binary files, archives, generated files, and local artifacts.
 9. Write the archive to `output/share/<project>-zip-context-YYYY-MM-DD.zip` unless the user provided `--output`.
 

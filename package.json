@@ -1,0 +1,13 @@
+{
+    "name": "skills",
+    "private": true,
+    "scripts": {
+        "format": "prettier --write ."
+    },
+    "prettier": {
+        "tabWidth": 4
+    },
+    "devDependencies": {
+        "prettier": "^3.9.5"
+    }
+}

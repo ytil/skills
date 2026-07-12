@@ -13,24 +13,24 @@ The mechanical facts behind the principles: where these files live, how they loa
 
 ### Locations & load order (broad → specific; later overrides nothing, all are concatenated)
 
-| Scope | Location | Loaded |
-|---|---|---|
-| Managed policy | macOS `/Library/Application Support/ClaudeCode/CLAUDE.md`, Linux/WSL `/etc/claude-code/CLAUDE.md`, Windows `C:\Program Files\ClaudeCode\CLAUDE.md` | Always, can't be excluded |
-| User | `~/.claude/CLAUDE.md` | Always (all your projects) |
-| Project | `./CLAUDE.md` or `./.claude/CLAUDE.md` | Always (shared via VCS) |
-| Local | `./CLAUDE.local.md` (gitignore it) | Always (just you) |
+| Scope          | Location                                                                                                                                           | Loaded                     |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Managed policy | macOS `/Library/Application Support/ClaudeCode/CLAUDE.md`, Linux/WSL `/etc/claude-code/CLAUDE.md`, Windows `C:\Program Files\ClaudeCode\CLAUDE.md` | Always, can't be excluded  |
+| User           | `~/.claude/CLAUDE.md`                                                                                                                              | Always (all your projects) |
+| Project        | `./CLAUDE.md` or `./.claude/CLAUDE.md`                                                                                                             | Always (shared via VCS)    |
+| Local          | `./CLAUDE.local.md` (gitignore it)                                                                                                                 | Always (just you)          |
 
 - Files in the directory hierarchy **above** the working dir load in full at launch, root-down (closer-to-cwd is read last). Files in **subdirectories** load on demand when Claude reads files there.
 - **Size target:** under 200 lines. Longer files reduce adherence. CLAUDE.md loads in full regardless of length — there's no truncation saving you.
 - **HTML comments** (`<!-- maintainer note -->`) are stripped before the content enters context — free notes for humans, zero token cost. Comments inside code blocks are preserved.
 - **It's context, not enforcement.** Delivered as a user message after the system prompt; Claude usually follows it but isn't bound by it. For hard guarantees use a hook or `permissions.deny`.
-- `/init` generates a starting file by analyzing the codebase (and, with `CLAUDE_CODE_NEW_INIT=1`, runs an interactive multi-phase flow). Treat its output as a *draft to curate*, not a finished file — review it against principle #9.
+- `/init` generates a starting file by analyzing the codebase (and, with `CLAUDE_CODE_NEW_INIT=1`, runs an interactive multi-phase flow). Treat its output as a _draft to curate_, not a finished file — review it against principle #9.
 
 ### `@import` syntax
 
 - `@path/to/file` pulls another file in. Both relative (resolved against the importing file) and absolute paths work; `@~/...` reaches your home dir.
 - Recursive, **max depth 4 hops**.
-- Imported files **load at launch into context** — imports help *organization*, they do **not** reduce context. To actually defer loading, use path-scoped rules or skills.
+- Imported files **load at launch into context** — imports help _organization_, they do **not** reduce context. To actually defer loading, use path-scoped rules or skills.
 
 ### `.claude/rules/` (modular & path-scoped instructions)
 
@@ -40,9 +40,11 @@ The mechanical facts behind the principles: where these files live, how they loa
 ```markdown
 ---
 paths:
-  - "src/api/**/*.{ts,tsx}"
+    - "src/api/**/*.{ts,tsx}"
 ---
+
 # API rules
+
 - All endpoints validate input.
 ```
 
@@ -58,6 +60,7 @@ Claude Code reads `CLAUDE.md`, not `AGENTS.md`. When a repo already has `AGENTS.
 @AGENTS.md
 
 ## Claude Code
+
 Use plan mode for changes under `src/billing/`.
 ```
 

@@ -7,14 +7,14 @@ description: Write or review AGENTS.md and CLAUDE.md files — the always-loaded
 
 `AGENTS.md` (the cross-tool standard) and `CLAUDE.md` (Claude Code's variant) are the same genre: a plain-Markdown file loaded into **every** agent session to onboard it to a repository. This skill helps you write one from scratch or review an existing one.
 
-The whole skill rests on one fact: **a model is stateless, and this file is the main thing it reads about the project on every single run.** That makes it the highest-leverage text in the repo — and it means every line is a standing tax on every session. As the instruction count climbs, adherence drops *uniformly*: the model doesn't ignore only the new lines, it follows all of them a little less. So the goal is never "write down everything." It's "write down the few things the agent must know and would otherwise get wrong — and nothing else."
+The whole skill rests on one fact: **a model is stateless, and this file is the main thing it reads about the project on every single run.** That makes it the highest-leverage text in the repo — and it means every line is a standing tax on every session. As the instruction count climbs, adherence drops _uniformly_: the model doesn't ignore only the new lines, it follows all of them a little less. So the goal is never "write down everything." It's "write down the few things the agent must know and would otherwise get wrong — and nothing else."
 
 ## Principles
 
 The shared core for both writing and reviewing. Each is a line you should be able to defend.
 
-1. **Every line is loaded every session — so earn each one.** If a line isn't useful in *most* sessions, it belongs elsewhere (see #5) or nowhere.
-2. **Cover WHAT, WHY, HOW.** *What* = stack + a map of where things live. *Why* = what the major pieces are for, so the agent grasps intent. *How* = the real commands to build, test, run, and verify.
+1. **Every line is loaded every session — so earn each one.** If a line isn't useful in _most_ sessions, it belongs elsewhere (see #5) or nowhere.
+2. **Cover WHAT, WHY, HOW.** _What_ = stack + a map of where things live. _Why_ = what the major pieces are for, so the agent grasps intent. _How_ = the real commands to build, test, run, and verify.
 3. **Stay short.** Aim well under ~150 lines; many excellent files are under 60, and Claude Code's own guidance targets <200. Shorter file → better adherence.
 4. **Prefer pointers to copies.** Reference `path/to/file.ts:42` and `@imports`/READMEs instead of pasting code, schemas, or command output — copies rot, pointers don't.
 5. **Use progressive disclosure.** Push task- or area-specific detail out of the always-loaded file into `@`-imported topic docs, path-scoped `.claude/rules/`, or skills — then point to them so the agent reads them only when relevant.
@@ -26,13 +26,13 @@ The shared core for both writing and reviewing. Each is a line you should be abl
 
 ## Changing the file: propose first, apply only with the human's OK
 
-Whether you're reviewing, editing, or writing one of these files, treat it as the user's hand-curated artifact — not yours to rewrite or create silently. Before you write or change an `AGENTS.md`/`CLAUDE.md`, **show the concrete edits (or the draft) and get the human's sign-off — don't modify the file on your own without them seeing it first.** This isn't ceremony: it's the highest-leverage text in the repo, a line you'd cut may be there for a reason you can't see, and a silent change ships into *every* future session before anyone notices it's wrong. "Here's what I'd cut and add, and why — want me to apply it?" is cheap, and it keeps the human in control of their own onboarding doc.
+Whether you're reviewing, editing, or writing one of these files, treat it as the user's hand-curated artifact — not yours to rewrite or create silently. Before you write or change an `AGENTS.md`/`CLAUDE.md`, **show the concrete edits (or the draft) and get the human's sign-off — don't modify the file on your own without them seeing it first.** This isn't ceremony: it's the highest-leverage text in the repo, a line you'd cut may be there for a reason you can't see, and a silent change ships into _every_ future session before anyone notices it's wrong. "Here's what I'd cut and add, and why — want me to apply it?" is cheap, and it keeps the human in control of their own onboarding doc.
 
 ## Reviewing an existing file
 
-1. Read the target file — plus any nested `CLAUDE.md`/`AGENTS.md`, `@`-imports, and `.claude/rules/` it pulls in (conflicts and bloat hide across files). Then **verify it against the actual repo** — don't judge the text in a vacuum: confirm the commands, paths, and architecture it claims are real and current, and notice what the agent needs that the file *omits*. The most expensive misses live here — a stale command or a half-complete map costs more than a wordy sentence.
+1. Read the target file — plus any nested `CLAUDE.md`/`AGENTS.md`, `@`-imports, and `.claude/rules/` it pulls in (conflicts and bloat hide across files). Then **verify it against the actual repo** — don't judge the text in a vacuum: confirm the commands, paths, and architecture it claims are real and current, and notice what the agent needs that the file _omits_. The most expensive misses live here — a stale command or a half-complete map costs more than a wordy sentence.
 2. Walk **`references/review-checklist.md`**, which turns the principles above into concrete checks with how-to-detect and how-to-fix notes.
-3. Report findings using the structure below. Per **"Changing the file"** above, these are *proposals* — apply them only after the user signs off; never edit the file mid-review.
+3. Report findings using the structure below. Per **"Changing the file"** above, these are _proposals_ — apply them only after the user signs off; never edit the file mid-review.
 
 **Review output structure:**
 
@@ -55,7 +55,7 @@ The failure mode here is emitting a generic template full of plausible guesses �
 2. **Map the architecture.** Skim the tree and the entry points; capture where the important things live as pointers (`dir/`, `file:line`), not prose.
 3. **Write down only what searching wouldn't reveal.** Infer conventions from the existing code, then record just the non-obvious rule, the gotcha that burned someone, the "always do X before Y." Ask the user for these — they're often nowhere in the code.
 4. **Assemble lean**, in roughly WHAT → HOW → map → conventions/gotchas → pointers order, applying every principle above. If you can't justify a line as "needed in most sessions," cut it.
-5. **Wire up cross-tool interop** when other agents are in play — see `references/cross-tool-reference.md`. Claude Code reads `CLAUDE.md`, *not* `AGENTS.md`; keep one source of truth and import/symlink rather than duplicate.
+5. **Wire up cross-tool interop** when other agents are in play — see `references/cross-tool-reference.md`. Claude Code reads `CLAUDE.md`, _not_ `AGENTS.md`; keep one source of truth and import/symlink rather than duplicate.
 
 After drafting, run the review checklist on your own output as a self-check — then show the user the draft and write it into the repo only once they're happy (see **"Changing the file"** above).
 

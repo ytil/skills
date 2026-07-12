@@ -13,7 +13,7 @@ const COMMON_RULES = `Rules:
 - Answer in the same language as the task statement.`;
 
 export function analysisPrompt(task) {
-  return `You are performing an independent expert analysis of a task against a real repository.
+    return `You are performing an independent expert analysis of a task against a real repository.
 
 ${COMMON_RULES}
 
@@ -27,7 +27,7 @@ ${task}`;
 }
 
 export function reviewPrompt(task, opponentAnalysis) {
-  return `Another engineer independently analyzed the task below against the same repository.
+    return `Another engineer independently analyzed the task below against the same repository.
 Your job is to cross-review their analysis. Be adversarial but fair: your value is in
 catching what is wrong or missing, not in agreeing.
 
@@ -48,20 +48,26 @@ ${opponentAnalysis}
 ---`;
 }
 
-export function synthesisPrompt({ task, analysisA, analysisB, reviewOfA, reviewOfB }) {
-  const reviewASection = reviewOfA
-    ? `## Review of Agent A's analysis (written by Agent B)
+export function synthesisPrompt({
+    task,
+    analysisA,
+    analysisB,
+    reviewOfA,
+    reviewOfB,
+}) {
+    const reviewASection = reviewOfA
+        ? `## Review of Agent A's analysis (written by Agent B)
 ${reviewOfA}`
-    : `## Review of Agent A's analysis
+        : `## Review of Agent A's analysis
 UNAVAILABLE — this review call failed. Weigh Agent A's unreviewed claims more cautiously.`;
 
-  const reviewBSection = reviewOfB
-    ? `## Review of Agent B's analysis (written by Agent A)
+    const reviewBSection = reviewOfB
+        ? `## Review of Agent B's analysis (written by Agent A)
 ${reviewOfB}`
-    : `## Review of Agent B's analysis
+        : `## Review of Agent B's analysis
 UNAVAILABLE — this review call failed. Weigh Agent B's unreviewed claims more cautiously.`;
 
-  return `Two agents (anonymized as Agent A and Agent B) independently analyzed the same task
+    return `Two agents (anonymized as Agent A and Agent B) independently analyzed the same task
 against the same repository, then each cross-reviewed the other's analysis. You are the
 neutral synthesizer: produce ONE final verdict from the four artifacts below. You have
 access to the same repository.

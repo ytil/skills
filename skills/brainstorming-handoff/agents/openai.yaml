@@ -1,8 +1,8 @@
 interface:
-  display_name: "Brainstorming Handoff"
-  short_description: "Clarify ideas into a design handoff"
-  brand_color: "#2563EB"
-  default_prompt: "Use $brainstorming-handoff to clarify this idea and end with a reviewed design handoff."
+    display_name: "Brainstorming Handoff"
+    short_description: "Clarify ideas into a design handoff"
+    brand_color: "#2563EB"
+    default_prompt: "Use $brainstorming-handoff to clarify this idea and end with a reviewed design handoff."
 
 policy:
-  allow_implicit_invocation: true
+    allow_implicit_invocation: true

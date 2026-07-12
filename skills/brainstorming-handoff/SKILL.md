@@ -146,33 +146,43 @@ Choose the handoff format based on the user's stated next step.
 ## Design Handoff
 
 ### Problem
+
 ...
 
 ### Goal
+
 ...
 
 ### Selected Approach
+
 ...
 
 ### Alternatives Considered
+
 ...
 
 ### User-Visible Behavior
+
 ...
 
 ### Constraints
+
 ...
 
 ### Out of Scope
+
 ...
 
 ### Acceptance Criteria
+
 ...
 
 ### Risks and Open Questions
+
 ...
 
 ### Suggested Next Steps
+
 ...
 ```
 
@@ -182,38 +192,50 @@ Choose the handoff format based on the user's stated next step.
 ## OpenSpec-Ready Handoff
 
 ### Problem
+
 ...
 
 ### Goal
+
 ...
 
 ### Suggested Change ID
+
 add-example-change
 
 ### Selected Approach
+
 ...
 
 ### Alternatives Considered
+
 ...
 
 ### Constraints
+
 ...
 
 ### Out of Scope
+
 ...
 
 ### Acceptance Criteria
+
 - ...
 
 ### Suggested Requirements
+
 #### Requirement: ...
+
 WHEN ...
 THEN ...
 
 ### Suggested Task Outline
+
 - ...
 
 ### Risks and Open Questions
+
 ...
 ```
 
@@ -238,6 +260,7 @@ Mapping to OpenSpec:
 A browser-based companion for showing mockups, diagrams, and visual options during brainstorming. Available as a tool — not a mode. Accepting the companion means it's available for questions that benefit from visual treatment; it does NOT mean every question goes through the browser.
 
 **Offering the companion:** When you anticipate that upcoming questions will involve visual content (mockups, layouts, diagrams), offer it once for consent:
+
 > "Some of what we're working on might be easier to explain if I can show it to you in a web browser. I can put together mockups, diagrams, comparisons, and other visuals as we go. This feature is still new and can be token-intensive. Want to try it? (Requires opening a local URL)"
 
 **This offer MUST be its own message.** Do not combine it with clarifying questions, context summaries, or any other content. The message should contain ONLY the offer above and nothing else. Wait for the user's response before continuing. If they decline, proceed with text-only brainstorming.

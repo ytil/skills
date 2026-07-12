@@ -1,7 +1,7 @@
 interface:
-  display_name: "AGENTS.md / CLAUDE.md"
-  short_description: "Write or review agent context files"
-  default_prompt: "Use $agents-md to write a new AGENTS.md/CLAUDE.md from real, explored facts, or to review an existing one against the checklist and report cut/keep/add fixes."
+    display_name: "AGENTS.md / CLAUDE.md"
+    short_description: "Write or review agent context files"
+    default_prompt: "Use $agents-md to write a new AGENTS.md/CLAUDE.md from real, explored facts, or to review an existing one against the checklist and report cut/keep/add fixes."
 
 policy:
-  allow_implicit_invocation: true
+    allow_implicit_invocation: true
