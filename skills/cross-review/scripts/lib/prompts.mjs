@@ -63,16 +63,22 @@ UNAVAILABLE — this review call failed. Weigh Agent B's unreviewed claims more 
 
   return `Two agents (anonymized as Agent A and Agent B) independently analyzed the same task
 against the same repository, then each cross-reviewed the other's analysis. You are the
-neutral synthesizer: produce ONE final verdict from the four artifacts below.
+neutral synthesizer: produce ONE final verdict from the four artifacts below. You have
+access to the same repository.
 
-Rules:
-- Work ONLY with the four artifacts below — do not explore the repository or run tools.
+${COMMON_RULES}
+
+Synthesis rules:
+- Your primary job is synthesis, not a third analysis — do not re-investigate the task
+  from scratch.
+- Never present a contested or unverified claim as fact: when the artifacts DISAGREE on
+  a factual claim, or a load-bearing claim was not confirmed by either review, verify
+  that specific claim against the actual code yourself before ruling on it.
 - Do not try to guess which model produced which artifact; judge content only.
 - Where the agents agree and reviews confirm, state it as consensus.
 - Where they disagree, resolve the disagreement explicitly: say which side the evidence
-  supports and why. A claim REFUTED by a review with concrete evidence must not survive
-  into the verdict unchallenged.
-- Answer in the same language as the task statement.
+  (including your own spot-checks) supports and why. A claim REFUTED by a review with
+  concrete evidence must not survive into the verdict unchallenged.
 
 Structure your verdict as:
 1. **Final answer** — the synthesized substance, most important first.
