@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cross Review"
+  short_description: "Cross-review a task in Claude + Codex, synthesize one verdict"
+  default_prompt: "Use $cross-review to run the user's read-only analysis task through both Claude and Codex, cross-review the results, and synthesize a single verdict. Resolve run parameters from the user's request, always confirm them through the approval gate before launching, then relay the verdict verbatim."
