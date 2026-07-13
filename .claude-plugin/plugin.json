@@ -1,7 +1,7 @@
 {
     "name": "ytil-skills",
-    "version": "1.3.0",
-    "description": "Personal agent skills: write/review AGENTS.md and CLAUDE.md, brainstorm ideas into a design handoff, pack a clean project-context zip, cross-review a task in Claude + Codex.",
+    "version": "1.4.0",
+    "description": "Personal agent skills: write/review AGENTS.md and CLAUDE.md, brainstorm ideas into a design handoff, pack a clean project-context zip, cross-review a task in Claude + Codex, and turn a YouTube video into a distilled note with screenshots.",
     "author": {
         "name": "Dmitrii Ivannikov",
         "email": "ivannikov.web@gmail.com"
@@ -14,12 +14,14 @@
         "agents-md",
         "brainstorming",
         "zip-context",
-        "cross-review"
+        "cross-review",
+        "youtube-notes"
     ],
     "skills": [
         "./skills/agents-md",
         "./skills/brainstorming-handoff",
         "./skills/cross-review",
+        "./skills/youtube-notes",
         "./skills/zip-context"
     ]
 }

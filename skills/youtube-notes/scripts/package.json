@@ -1,0 +1,20 @@
+{
+    "name": "youtube-notes-scripts",
+    "private": true,
+    "version": "1.0.0",
+    "description": "youtube-notes skill scripts: fetch video + subtitles, build contact sheets, extract frames, batch transcripts. Runs as plain TypeScript via Node's native type stripping.",
+    "type": "module",
+    "engines": {
+        "node": ">=22.18"
+    },
+    "scripts": {
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "jimp": "^1.6.0"
+    },
+    "devDependencies": {
+        "@types/node": "^24.0.0",
+        "typescript": "^5.7.0"
+    }
+}

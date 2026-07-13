@@ -1,0 +1,4 @@
+interface:
+    display_name: "YouTube Notes"
+    short_description: "Turn a YouTube video into a distilled Russian note with screenshots"
+    default_prompt: "Use $youtube-notes to turn the YouTube link the user shared into a concise Russian-language Obsidian note: fetch subtitles + a small video via the scripts, distill the key ideas into Russian bullets, illustrate the genuinely visual moments with screenshots, confirm the note name, then save it into the user's vault. Everything the user reads must be in Russian."
