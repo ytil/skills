@@ -49,6 +49,19 @@ export function secToStamp(sec: number): string {
     return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
 
+// Inverse of secToStamp: parse a display stamp ("M:SS" or "H:MM:SS", with or without
+// surrounding [brackets]) back into seconds. Returns null if the string isn't a timecode —
+// used to turn the `[M:SS]` block stamps in a cleaned transcript into `&t=<sec>s` links.
+export function stampToSec(stamp: string): number | null {
+    const s = stamp.trim().replace(/^\[|\]$/g, "").trim();
+    if (!/^\d+(?::\d{1,2}){1,2}$/.test(s)) return null;
+    const parts = s.split(":").map(Number);
+    if (parts.some((n) => Number.isNaN(n))) return null;
+    return parts.length === 2
+        ? parts[0]! * 60 + parts[1]!
+        : parts[0]! * 3600 + parts[1]! * 60 + parts[2]!;
+}
+
 // Decode the HTML entities YouTube emits in captions: named (&amp; &lt; &gt; &quot;
 // &apos; &nbsp;) plus decimal (&#39;) and hex (&#x27;) numeric references. This is the
 // subset that actually shows up in .vtt tracks; anything unknown is left verbatim.

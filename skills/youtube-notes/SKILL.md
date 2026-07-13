@@ -8,8 +8,13 @@ description: >-
     разбор / summary / notes from it — even if they don't name the format explicitly.
     Trigger on phrases like "сделай заметку по этому видео", "законспектируй ролик",
     "переведи и выжми главное из видео", "summarize this video", or a bare YouTube URL
-    with an implied "разбери это". Do NOT use for non-YouTube videos, local video files,
-    or when the user only wants the raw transcript with no distillation.
+    with an implied "разбери это". It ALSO covers the multi-video case — synthesizing many
+    videos, a playlist, or a channel into ONE categorized свод (ideas grouped by theme,
+    deduplicated, with footnotes that deep-link to the timecode in each source); trigger
+    that on a list of several YouTube URLs or on "собери идеи из этих роликов в один
+    документ", "свод по каналу", "аггрегируй / сравни идеи", "разбей идеи по категориям".
+    Do NOT use for non-YouTube videos, local video files, or when the user only wants the
+    raw transcript with no distillation.
 ---
 
 # YouTube → Obsidian note
@@ -188,6 +193,20 @@ Once the name is confirmed:
 Leave the scratchpad workdir in place during the session in case you need to re-extract a
 frame; it's temporary and outside the vault.
 
+## Multi-video синтез (свод)
+
+Everything above makes one note per video. When the user instead wants **many** videos folded
+into **one** document — a list of URLs, a playlist, a whole channel, "собери идеи в один
+документ", "разбей идеи по категориям" — it's a different, longer workflow with its own tools
+(`transcripts.ts` for subtitles-only batch download, fan-out extractor agents, and
+`cite_timecodes.ts` to deep-link the `[N]` footnotes to timecodes).
+
+**Read `references/aggregation.md` and follow it** — it has the full step-by-step (transcripts
+→ extract ideas → synthesize categorized note with deduped `[N]` footnotes → deep-link each
+footnote to its timecode → spot-check), including the ready-to-use extractor- and matcher-agent
+prompts. Don't improvise the свод from memory; the deep-linking has a validation gate that
+matters for trust.
+
 ## Notes & edge cases
 
 - **Language.** `fetch.ts` prefers manual subtitles, then auto-captions, preferring English
@@ -217,6 +236,10 @@ Run each as `node <skill>/scripts/<name>.ts ...`. They shell out to `yt-dlp` and
   given timecodes, named by timecode. `--offset` shifts grabs past a scene cut.
 - `scripts/transcripts.ts <workdir> <url1> <url2> ...` — batch, subtitles-only download for
   many videos → `<id>.txt` + `index.json`. The lightweight path for synthesizing ideas
-  across a playlist without downloading any video.
-- `scripts/lib.ts` — VTT parsing/formatting + subtitle-track selection helpers, shared by
-  `fetch.ts` and `transcripts.ts` (not called directly).
+  across a playlist without downloading any video. Used by the свод workflow.
+- `scripts/cite_timecodes.ts plan|apply <note.md> <transcripts_dir> <workdir> [--per-bin 18]` —
+  turn the `[N]` footnotes in a свод into clickable links that deep-link to the source video's
+  timecode. `plan` writes matcher-agent task files; `apply` validates the agents' matches
+  against each video's own transcript and rewrites the footnotes. See `references/aggregation.md`.
+- `scripts/lib.ts` — VTT parsing/formatting, timecode ↔ seconds, and subtitle-track selection
+  helpers, shared by `fetch.ts`, `transcripts.ts`, and `cite_timecodes.ts` (not called directly).
