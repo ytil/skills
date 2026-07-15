@@ -96,6 +96,7 @@ export interface YtMeta {
     webpage_url?: string;
     duration?: number;
     language?: string;
+    chapters?: Array<{ title?: string; start_time?: number }> | null;
     subtitles?: Record<string, unknown>;
     automatic_captions?: Record<string, unknown>;
 }
@@ -225,6 +226,62 @@ export function formatTranscript(
         blocks.push({ start: curStart, text: curWords.join(" ") });
     }
     return blocks.map((b) => `[${secToStamp(b.start)}] ${b.text}`).join("\n");
+}
+
+// ---- Cleaned-transcript helpers (the `[M:SS] text` block format) ----
+// Shared by cite_timecodes.ts (свод deep-linking) and note_model.ts (quote grounding).
+
+export const STAMP_LINE_RE = /^\[(\d+(?::\d+){1,2})\]\s*(.*)$/;
+
+export interface TranscriptBlock {
+    stamp: string;
+    sec: number;
+    text: string;
+}
+
+export interface LoadedTranscript {
+    blocks: TranscriptBlock[];
+    byStamp: Map<string, number>;
+    duration: number | null;
+}
+
+export function loadTranscript(path: string): LoadedTranscript {
+    const blocks: TranscriptBlock[] = [];
+    let duration: number | null = null;
+    for (const raw of readFileSync(path, "utf-8").split("\n")) {
+        const dm = /^DURATION:\s*(.+)$/.exec(raw);
+        if (dm) duration = stampToSec((dm[1] as string).trim());
+        const bm = STAMP_LINE_RE.exec(raw);
+        if (bm) {
+            const stamp = bm[1] as string;
+            blocks.push({
+                stamp,
+                sec: stampToSec(stamp) ?? 0,
+                text: bm[2] as string,
+            });
+        }
+    }
+    const byStamp = new Map<string, number>();
+    blocks.forEach((b, i) => byStamp.set(b.stamp, i));
+    return { blocks, byStamp, duration };
+}
+
+const normText = (t: string): string =>
+    (t || "")
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+// Fraction of the smaller word-set that the two strings share — robust to light
+// paraphrase/trimming while still catching a wrong transcript block.
+export function containment(a: string, b: string): number {
+    const A = new Set(normText(a).split(" ").filter(Boolean));
+    const B = new Set(normText(b).split(" ").filter(Boolean));
+    if (!A.size || !B.size) return 0;
+    let inter = 0;
+    for (const w of A) if (B.has(w)) inter++;
+    return inter / Math.min(A.size, B.size);
 }
 
 // Choose the best subtitle track. Returns { lang, kind } (kind is 'manual' | 'auto').

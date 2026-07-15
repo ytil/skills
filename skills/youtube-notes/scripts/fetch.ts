@@ -163,7 +163,9 @@ function main(): void {
     // find their outputs by filename pattern, so stale video.*/sub.*.vtt from a previous
     // run would be silently picked up as this video's.
     if (info.id) {
-        const idPath = join(workdir, "video.id");
+        // Hidden name on purpose: downloadVideo() finds its output by the `video.*`
+        // glob, and a marker named `video.id` would match it.
+        const idPath = join(workdir, ".source.id");
         if (existsSync(idPath)) {
             const prev = readFileSync(idPath, "utf-8").trim();
             if (prev && prev !== info.id) {
@@ -214,7 +216,16 @@ function main(): void {
     );
 
     const duration = info.duration ?? 0;
+    // Author-defined YouTube chapters are a free sectioning hint for the note.
+    const chapters = (info.chapters ?? [])
+        .filter((c) => c.title && c.start_time !== undefined)
+        .map((c) => ({
+            title: c.title as string,
+            t: Math.round(c.start_time as number),
+            stamp: secToStamp(c.start_time as number),
+        }));
     const outMeta = {
+        chapters,
         title: info.title ?? null,
         channel: info.channel ?? info.uploader ?? null,
         id: info.id ?? null,
@@ -243,6 +254,9 @@ function main(): void {
     }
     console.error(`Video:      ${videoPath}`);
     console.error(`Scenes:     ${scenesPath} (${nScenes} candidates)`);
+    console.error(
+        `Chapters:   ${chapters.length ? `${chapters.length} (author-defined, see meta.json)` : "none"}`,
+    );
     console.error(`Meta:       ${join(workdir, "meta.json")}`);
 }
 

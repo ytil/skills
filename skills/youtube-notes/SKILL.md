@@ -1,9 +1,11 @@
 ---
 name: youtube-notes
 description: >-
-    Turn a YouTube video into a distilled Russian-language study note in Markdown,
-    with screenshots of the important on-screen moments (slides, UI, charts, diagrams),
-    saved into the user's Obsidian vault. Use this whenever the user shares a YouTube
+    Turn a YouTube video into a distilled Russian-language study note — thematic
+    sections with timecode deep-links, idea cards, grounded quotes and screenshots of
+    the important on-screen moments (slides, UI, charts) — saved into the user's
+    Obsidian vault, with an optional self-contained HTML page («сделай html») rendered
+    from the same source of truth. Use this whenever the user shares a YouTube
     link and wants a конспект / заметку / краткое содержание / перевод / ключевые идеи /
     разбор / summary / notes from it — even if they don't name the format explicitly.
     Trigger on phrases like "сделай заметку по этому видео", "законспектируй ролик",
@@ -34,33 +36,49 @@ structured. Everything _under_ them is Russian.
 
 ## What good output looks like
 
-The user's own reference note is the target (`# Core ideas` + `# Links`). Its character:
+Not a flat wall of bullets: the note has a **spine of thematic sections** and **idea
+cards** inside them. Character:
 
-- **Distilled, not transcribed.** A 15-minute video becomes ~10–20 bullet points, not
-  a wall of translated text. Each bullet is one idea in the user's words. If you find
-  yourself translating sentence-by-sentence, stop — you're making a transcript, not a note.
+- **Distilled, not transcribed.** A 15-minute video → 4–6 sections × 2–4 idea cards.
+  Each card: a bold one-sentence thesis, then 2–4 tab-indented detail points. If you
+  find yourself translating sentence-by-sentence, stop — that's a transcript.
 - **Screenshots are selective.** Images appear where a frame actually _shows_ something
-  (a slide with rules, an app UI, a chart, a search result), not on every bullet. Bare
-  bullets are normal and good. Forcing one image per point is what makes a note read as
-  auto-generated.
-- **Plain, practical tone** — notes-to-self, on point, no filler intro/outro.
+  (a slide with rules, an app UI, a chart), bound to the idea they illustrate. Bare
+  cards are normal and good.
+- **Sparse accents, never decoration:** 0–3 grounded quotes (`[!quote]` callouts with a
+  timecode deep link), 0–2 `[!tip]`/`[!warning]` callouts for the video's main
+  takeaway/pitfall, 0–2 mermaid diagrams only for ideas with a real SHAPE (cycle,
+  funnel, comparison). A note that is all callouts is the same wall, just colored.
+- **Plain, practical tone** — notes-to-self, no filler intro/outro.
 
-Structure to produce (nested bullets are tab-indented — shown here literally):
+Shape of the rendered note (nested bullets are tab-indented; images embed as
+`![[filename]]`, resolved from the vault's attachments folder):
 
 ```text
 # Core ideas
-- Идея одним предложением
-- Идея с иллюстрацией ![[slug-01.png]]
-	- под-пункт, уточнение
-	- под-пункт
-- Ещё идея
+
+## [Название секции](https://www.youtube.com/watch?v=...&t=96s)
+
+- **Тезис одним предложением.**
+	- деталь: цифра, шаг, название
+	- деталь
+![[slug-01.png]]
+
+> [!quote] [2:10](https://www.youtube.com/watch?v=...&t=130s)
+> «Сильная формулировка автора»
+
+## Следующая секция
+...
 
 # Links
 - [Original video title](https://www.youtube.com/watch?v=...)
 ```
 
-Note: nested bullets use a **tab**, and images embed with Obsidian syntax `![[filename]]`
-(just the filename — the vault resolves it from the attachments folder).
+You never assemble this markdown by hand. You write **`video.json`** (the single source
+of truth — sections, ideas, screenshots, quotes) and deterministic renderers produce the
+note and, on request, an HTML page — both validated (timecodes in range, quotes grounded
+against the transcript, screenshot files exist). Contract and authoring rules:
+**`references/note-format.md`** — read it before writing video.json.
 
 ## Environment
 
@@ -105,10 +123,13 @@ re-run the same command (downloads resume), and never report it to the user as "
 Also note `fetch.ts` refuses a workdir that holds a different video's files — on that error,
 pick a fresh workdir instead of forcing it.
 
-### 2. Distill into Russian key ideas
+### 2. Distill into video.json
 
-Read the whole transcript first, then write the `# Core ideas` list. This is the heart
-of the note and where your judgment matters most:
+Read the whole transcript first (and `meta.json` — if the video has author chapters,
+they're your sectioning head start). Then write `<workdir>/video.json` per
+`references/note-format.md`: 4–8 Russian-titled sections with start timecodes, idea
+cards inside (thesis + detail points), placeholders for screenshots/quotes to be filled
+in step 3. This is the heart of the note and where your judgment matters most:
 
 - Extract the **substantive, reusable ideas** — the advice, rules, numbers, and
   frameworks a viewer would want to remember. Skip greetings, sponsor plugs, and
@@ -118,10 +139,12 @@ of the note and where your judgment matters most:
   telltale sign of machine-flavored notes («реверс-инжинирит», «спека», «таргетируешь»,
   «шерабельный»): use the normal Russian word instead («разбирает», «спецификация»,
   «нацеливаешься», «которым хочется поделиться»). Product/brand names stay as-is.
-- Group related detail as nested sub-bullets (tab-indented) where it clarifies a point,
-  like the rules list in the reference note.
-- Keep the transcript's timecodes in mind — you'll need them next to find screenshots.
-  As you draft each bullet, note the rough `[M:SS]` where that idea is discussed.
+- One card = one idea: a self-sufficient `tldr_ru` thesis plus 2–4 `points_ru` details
+  (numbers, steps, names). Don't restate the thesis in the points.
+- Keep the transcript's timecodes: sections need a start `t`, quotes need the exact
+  block, and you'll need timecodes next to find screenshots.
+- Quotes and mermaid are rare accents with hard rules — see `references/note-format.md`
+  (a quote carries the verbatim `orig` transcript line; the renderer verifies it).
 - **Trust the screen over the auto-captions for names and numbers.** Auto-generated
   subtitles routinely mangle brand and product names (e.g. "Habit Kit" transcribed as
   "Habit Kids"), drop words, and garble figures. When a slide or UI frame shows the real
@@ -129,7 +152,7 @@ of the note and where your judgment matters most:
   If a tool or site is named but the caption swallowed it, say it generically rather than
   guessing — never invent a specific name or URL that isn't confirmed by the video.
 
-Aim for the reference note's density: tight, skimmable, every line earning its place.
+Aim for tight, skimmable density: every line earning its place.
 
 ### 3. Choose and extract screenshots
 
@@ -167,43 +190,60 @@ and actually illustrates a bullet. If a frame sits mid-transition, re-extract a 
 two later, or pick the adjacent scene timecode from `scenes.txt`. A slide is worth keeping
 only if its text is legible — 480p handles most slides fine, but drop anything blurry.
 
-**c. Match frames to bullets.** Attach a screenshot only to the bullets it genuinely
-illustrates. It's completely fine for a strong idea to have no image, and for one image
-to sit under the single bullet it fits best. Follow the screenshot density the user chose:
-by default, _moderate_ — illustrate the points where a frame adds real information, leave
-the rest as text. Expect on the order of a handful to ~15 images for a typical talk, fewer
-for a sparse one.
+**c. Bind frames to ideas.** Put each kept frame's filename into the `screenshot` field
+of the idea card it genuinely illustrates. It's completely fine for a strong idea to have
+no image, and one image sits under the single card it fits best. Default density is
+_moderate_ — a handful to ~15 images for a typical talk, fewer for a sparse one. Fill in
+the quotes now too (verbatim `orig` line + `t` from the transcript).
 
-### 4. Assemble and name the note
+### 4. Validate, preview, name
 
-Draft the full note in the structure above. Then propose a filename and **confirm with
-the user before writing anything to the vault** — the user names notes by clean topic
-(e.g. `ASO (App Store Optimization)`), _not_ by the video's title (`My App Makes
-$50K/Month...`), so you can't just reuse the title. Suggest a short topic name in Russian
-or English as fits the subject, show it, and let them adjust:
+Render a preview — this also runs the validation gate (timecodes in range, quotes
+grounded, screenshots exist); fix `video.json` until it passes:
+
+```bash
+node "<skill>/scripts/render_obsidian.ts" "<workdir>/video.json" "<workdir>" --dry-run
+```
+
+Then propose a filename and **confirm with the user before writing anything to the
+vault** — the user names notes by clean topic (e.g. `ASO (App Store Optimization)`),
+_not_ by the video's title. Suggest a short topic name in Russian or English as fits:
 
 > Предлагаю назвать заметку: **«<тема>»**. Сохранить так или поправить название?
 
 If the user already gave a name or topic in their request (or told you not to ask), use
-that and skip the question — the confirmation exists to catch a bad auto-name, not to
-nag when the name is already settled.
+that and skip the question.
 
-### 5. Save into the vault
+### 5. Render into the vault
 
-Once the name is confirmed:
+Once the name is confirmed, the renderer does the mechanical part — copies the chosen
+frames into attachments as `<slug>-01.png…` (collision-safe), writes the note, and
+refuses to overwrite an existing one:
 
-- Copy the chosen frames into the attachments folder with clean, collision-safe names:
-  `<slug>-01.png`, `<slug>-02.png`, … where `<slug>` is a short latin slug of the topic.
-  Don't reuse the `Pasted image <timestamp>.png` scheme — timestamped names collide and
-  are opaque. Before writing, check the name isn't already taken in attachments; if it is,
-  bump the number.
-- Write the note as `<vault>/<confirmed name>.md`. **If a file with that name already
-  exists, stop and ask** — don't overwrite an existing note.
-- Update the `![[...]]` embeds in the note to the final attachment filenames.
-- Tell the user (in Russian) where the note was saved and how many screenshots it has.
+```bash
+node "<skill>/scripts/render_obsidian.ts" "<workdir>/video.json" "<workdir>" \
+  --vault "$HOME/Yandex.Disk.localized/ytil-db" \
+  --attachments "$HOME/Yandex.Disk.localized/ytil-db/attachments" \
+  --name "<подтверждённое имя>" --slug <latin-slug>
+```
 
-Leave the scratchpad workdir in place during the session in case you need to re-extract a
-frame; it's temporary and outside the vault.
+Tell the user (in Russian) where the note was saved and how many screenshots it has.
+Leave the scratchpad workdir in place during the session; `video.json` stays there, so
+any re-render (including HTML) is free.
+
+### 6. HTML mode (on request)
+
+When the user asks for an HTML page («сделай html», «страницу», or both formats), render
+the same `video.json` into a light self-contained page (hero, section timeline with
+YouTube deep links, idea cards with the real screenshots, auto dark theme):
+
+```bash
+node "<skill>/scripts/render_html.ts" "<workdir>/video.json" "<workdir>" \
+  --out "$HOME/yt-notes-html" --slug <latin-slug>
+```
+
+Output: `~/yt-notes-html/<slug>/<slug>.html` + `assets/` — outside the vault, opens with
+a double-click. Default deliverable is the Obsidian note; HTML only when asked.
 
 ## Multi-video синтез (свод)
 
@@ -250,6 +290,16 @@ Run each as `node <skill>/scripts/<name>.ts ...`. They shell out to `yt-dlp` and
   grids for surveying visuals; prints a tile→timecode map. Accepts `--times t1 t2 ...` instead.
 - `scripts/frames.ts <video> <outdir> <sec> [<sec> ...] [--offset 0.0]` — full-res frames at
   given timecodes, named by timecode. `--offset` shifts grabs past a scene cut.
+- `scripts/render_obsidian.ts <video.json> <workdir> (--dry-run | --vault <dir>
+  --attachments <dir> --name "<note>" --slug <slug>)` — validate video.json (timecodes,
+  quote grounding vs transcript, screenshot files) and render the Obsidian note;
+  `--dry-run` previews to stdout, the real run copies frames into attachments as
+  `<slug>-NN.png` and refuses to overwrite an existing note.
+- `scripts/render_html.ts <video.json> <workdir> --out <dir> --slug <slug>` — same
+  validation, then a light self-contained HTML page → `<out>/<slug>/<slug>.html` +
+  `assets/`.
+- `scripts/note_model.ts` — video.json types + the shared validation gate used by both
+  renderers (not called directly). Contract: `references/note-format.md`.
 - `scripts/transcripts.ts <workdir> <url1> <url2> ... [--lang XX]` — batch, subtitles-only
   download for many videos → `<id>.txt` + `index.json`. The lightweight path for synthesizing
   ideas across a playlist without downloading any video. Used by the свод workflow. In

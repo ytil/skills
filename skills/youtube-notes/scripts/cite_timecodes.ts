@@ -37,7 +37,7 @@ import {
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
-import { stampToSec } from "./lib.ts";
+import { containment, loadTranscript, stampToSec } from "./lib.ts";
 
 const SOURCES_HEADERS = ["# Источники", "# Links", "# Sources"];
 // A footnote is either the already-clickable form [\[N\]](url) or a bare [N] not followed
@@ -45,7 +45,6 @@ const SOURCES_HEADERS = ["# Источники", "# Links", "# Sources"];
 const CITE_RE =
     /\[\\\[(\d+)\\\]\]\((https?:\/\/[^)]+?)\)|\[(\d+)\](?!\()/g;
 const SRC_LINE_RE = /^\s*(\d+)\.\s+\[[^\]]*\]\((https?:\/\/[^)]+)\)/;
-const STAMP_LINE_RE = /^\[(\d+(?::\d+){1,2})\]\s*(.*)$/;
 
 interface Occurrence {
     occ_id: number;
@@ -211,43 +210,6 @@ function plan(note: string, transcriptsDir: string, workdir: string, perBin: num
 }
 
 // --------------------------------------------------------------- apply
-
-interface Block {
-    stamp: string;
-    sec: number;
-    text: string;
-}
-
-function loadTranscript(path: string): { blocks: Block[]; byStamp: Map<string, number>; duration: number | null } {
-    const blocks: Block[] = [];
-    let duration: number | null = null;
-    for (const raw of readFileSync(path, "utf-8").split("\n")) {
-        const dm = /^DURATION:\s*(.+)$/.exec(raw);
-        if (dm) duration = stampToSec((dm[1] as string).trim());
-        const bm = STAMP_LINE_RE.exec(raw);
-        if (bm) {
-            const stamp = bm[1] as string;
-            blocks.push({ stamp, sec: stampToSec(stamp) ?? 0, text: bm[2] as string });
-        }
-    }
-    const byStamp = new Map<string, number>();
-    blocks.forEach((b, i) => byStamp.set(b.stamp, i));
-    return { blocks, byStamp, duration };
-}
-
-const norm = (t: string): string =>
-    (t || "").toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-
-// Fraction of the smaller word-set that the two strings share — robust to an agent
-// trimming or lightly paraphrasing the quoted line while still catching a wrong block.
-function containment(a: string, b: string): number {
-    const A = new Set(norm(a).split(" ").filter(Boolean));
-    const B = new Set(norm(b).split(" ").filter(Boolean));
-    if (!A.size || !B.size) return 0;
-    let inter = 0;
-    for (const w of A) if (B.has(w)) inter++;
-    return inter / Math.min(A.size, B.size);
-}
 
 function apply(note: string, transcriptsDir: string, workdir: string): void {
     const { lines, sources } = readNote(note);
