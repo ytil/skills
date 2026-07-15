@@ -39,7 +39,8 @@ Across the effort the iteration rhythm is: **`git pull` → delegate → verify 
 land → `git push` → next stage.** The pull and the push are the two steps
 easiest to forget, and each skip has a price: a stale base turns into merge
 conflicts at landing, and an unpushed stage is invisible to CI and to anything
-else basing off the remote.
+else basing off the remote. When the last stage lands, run the closing audit
+("Closing the effort" below) before calling the effort done.
 
 ## External agent worktree contract
 
@@ -168,6 +169,38 @@ next. Two consequences:
 - Author-mode defense: keep parallel stages on disjoint file sets. If two
   in-flight stage prompts touch the same module, they were really one stage —
   merge them or sequence them rather than racing their landings.
+
+## Closing the effort
+
+When the last planned stage lands, the effort is not done — it is merely
+all-stages-green. Per-stage verification proved each stage did what *its
+prompt* said; nothing yet proved the union of stage prompts covers the
+*original ask*. Gaps live exactly in that seam: requirements no stage prompt
+claimed, quality bars everyone assumed someone else owned, minors deferred to
+"a later stage" that never existed. Close with a final acceptance review:
+
+1. **Resurrect the original requirements.** Go back to the source ask — the
+   task document, the plan, the user's words — not to the stage map derived
+   from it: the derivation is where scope quietly narrowed. Write the
+   requirements out as an explicit checklist.
+2. **Run an adversarial completeness review** with the same machinery as step 3
+   of the loop (same runtime files), pointed at the whole effort delta
+   (`git diff <effort-base>..HEAD`, where effort-base is the commit the first
+   stage branched from), with completion dimensions instead of diff dimensions:
+   **requirements-coverage** — each checklist item mapped to concrete evidence
+   in the delivered state, file and behavior named; **scope-fidelity** —
+   nothing promised is missing, nothing unrequested crept in;
+   **quality-bar** — new behavior has tests, docs updated where the repo keeps
+   them; **deferred-residue** — grep the stage reports and commit messages for
+   "deferred / later stage / TODO" promises and confirm each was done or
+   explicitly dropped.
+3. **Machine-verify the acceptance claims.** Same rule as always — evidence
+   over narration: exercise the delivered behavior end-to-end where possible.
+   Green gates prove code health, not that a requirement is met.
+4. **Reconcile into a gap list.** Every confirmed gap becomes either a new
+   stage (back to Author mode) or an explicitly recorded exclusion the user
+   signed off on. The effort is done when this list is empty or every entry is
+   a sanctioned exclusion — not when the last stage's commit lands.
 
 ## Three principles the loop is built on
 
