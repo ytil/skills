@@ -2,9 +2,7 @@
     "name": "skills",
     "private": true,
     "scripts": {
-        "format": "prettier --write .",
-        "bump": "node scripts/sync-plugins.mjs bump",
-        "check": "node scripts/sync-plugins.mjs check"
+        "format": "prettier --write ."
     },
     "prettier": {
         "tabWidth": 4
