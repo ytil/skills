@@ -28,12 +28,20 @@ plus machine-checkable evidence.
 
 Two modes. You will usually alternate between them across the effort.
 
-- **Author** — you are about to delegate a stage. Write the prompt. See
+- **Author** — you are about to delegate a stage. First `git pull` the target
+  branch — the remote may have moved ahead, and a stage built on a stale base
+  pays for it at landing time. Then write the prompt. See
   `references/stage-prompt.md`. Every external-agent prompt must require a
   separate `git worktree`, all edits inside that worktree, and the worktree path
   in the final report.
 - **Verify** — a report came back. Prove or disprove it before committing. This
   is the load-bearing mode; the rest of this file is mostly about it.
+
+Across the effort the iteration rhythm is: **`git pull` → delegate → verify →
+land → `git push` → next stage.** The pull and the push are the two steps
+easiest to forget, and each skip has a price: a stale base turns into merge
+conflicts at landing, and an unpushed stage is invisible to CI and to anything
+else basing off the remote.
 
 ## External agent worktree contract
 
@@ -113,7 +121,10 @@ because the report says green — the report is a claim, not evidence.
    committing after a fix without re-running the *full* gate: a passing typecheck
    is not a passing dead-code/format check.
 
-8. **Land the worktree on `main`.** The verified work is uncommitted inside the
+8. **Land the worktree on `main`.** First sync `main` with the remote —
+   `git pull`, resolving conflicts if the remote moved — because landing on a
+   stale local tip only defers the same conflicts to push time, after the gate
+   evidence has gone stale. The verified work is uncommitted inside the
    worktree; a bare `git diff | git apply` would silently drop untracked files.
    Instead, make the stage commit *inside the worktree* yourself —
    `git -C <worktree> add -A && git -C <worktree> commit` — then bring it into
@@ -125,10 +136,14 @@ because the report says green — the report is a claim, not evidence.
    verification evidence was relative to the old base. When the landing is
    green, `git worktree remove` the landed tree.
 
-9. **Finalize the commit and update memory.** One commit per stage on `main`.
-   The message states what the stage did, what got fixed after review, and any
-   known transient. Then update the project's plan/status memory with the
-   commit hash and the gotchas learned.
+9. **Finalize the commit, push, and update memory.** One commit per stage on
+   `main`. The message states what the stage did, what got fixed after review,
+   and any known transient. `git push` before starting the next stage — stacked
+   unpushed stages turn the eventual push into a multi-stage gamble, and CI only
+   sees what you push. If the push is rejected because the remote moved,
+   `git pull --rebase`, resolve, re-run the full gate (a rebase is an edit like
+   any other), then push. Finally update the project's plan/status memory with
+   the commit hash and the gotchas learned.
 
 ## Parallel stages
 
