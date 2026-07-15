@@ -16,7 +16,8 @@ Personal agent-skills monorepo, shipped as a Claude Code + Codex plugin marketpl
 
 ## Before every push
 
-The plugin manifests do not auto-derive from `skills/` — keep them in sync by hand:
+The plugin manifests do not auto-derive from `skills/`. `scripts/sync-plugins.mjs` handles the mechanics:
 
-- **Bump the version on every push** — increment `version` identically (patch by default; minor/major for larger changes) in all three: `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`. They must always match.
-- When you add, remove, rename, or change what a skill exposes, also update the skill list in `.claude-plugin/plugin.json` `skills[]` (Codex's `plugin.json` globs `./skills/`, so it needs no list), refresh `keywords`/`description`, and mirror the change in `README.md` (skill list + Layout tree).
+- **Bump the version on every push:** `npm run bump` — increments `version` identically across all three manifests (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`) and re-derives `skills[]` from `skills/`. Use `npm run bump -- --minor` / `--major` for larger changes.
+- **`npm run check`** verifies the manifests are in sync (exit 1 if not) — safe for CI or a pre-push hook. It does not enforce _when_ to bump; that's on you (or a hook).
+- **Curated by hand** (the script leaves these alone): when you add, remove, or rename a skill, refresh `keywords`/`description` in the manifests and mirror the change in `README.md` (skill list + Layout tree).

@@ -10,7 +10,7 @@
             "name": "ytil-skills",
             "source": ".",
             "description": "All skills from this repo: write/review AGENTS.md and CLAUDE.md, brainstorm ideas into a design handoff, pack a clean project-context zip, cross-review a task in Claude + Codex, orchestrate multi-stage delegated work with hard verification, and turn a YouTube video into a distilled note with screenshots.",
-            "version": "1.7.4"
+            "version": "1.7.5"
         }
     ]
 }
