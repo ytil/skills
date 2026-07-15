@@ -7,7 +7,7 @@ Personal agent skills for Codex, Claude Code, and other Agent Skills-compatible 
 - `agents-md` - write or review AGENTS.md/CLAUDE.md agent-context files: ten principles, a verification-first review checklist, and AGENTS.md↔CLAUDE.md cross-tool interop. Sourced from [HumanLayer's "Writing a good CLAUDE.md"](https://www.humanlayer.dev/blog/writing-a-good-claude-md).
 - `brainstorming-handoff` - clarify feature, refactor, product, or behavior ideas before implementation and end with a structured design handoff.
 - `cross-review` - run a read-only analysis task through Claude and Codex in parallel, cross-review the two analyses against the real code, and synthesize one verdict. Subscription auth only (Claude Agent SDK + Codex SDK).
-- `youtube-notes` - turn a YouTube video into a distilled Russian-language Obsidian note with screenshots of the important on-screen moments. TypeScript scripts drive `yt-dlp` + `ffmpeg`; run `npm install` in `skills/youtube-notes/scripts/` once before first use.
+- `youtube-notes` - turn a YouTube video into a distilled Russian-language Obsidian note with screenshots of the important on-screen moments. TypeScript scripts drive `yt-dlp` + `ffmpeg`; run `bash skills/youtube-notes/scripts/init.sh` once before first use to install/restore dependencies.
 - `zip-context` - create a clean project-context zip archive for model handoff. Original repo: https://github.com/glebkudr/zip_context.
 
 ## Layout
@@ -45,10 +45,12 @@ skills/
     agents/
       openai.yaml
     scripts/
+      init.sh
       fetch.ts
       contact_sheet.ts
       frames.ts
       transcripts.ts
+      cite_timecodes.ts
       lib.ts
       package.json
       tsconfig.json

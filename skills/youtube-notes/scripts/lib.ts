@@ -10,7 +10,30 @@
 // The approach below strips tags, then drops a line whenever it equals the previous
 // emitted line, which collapses the rolling repeats into a clean, timecoded transcript.
 
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+// Absolute path to the skill's setup/restore script, so dependency-missing errors can
+// point the user at the exact command to fix them. All scripts live in this same dir.
+export const INIT_SCRIPT = join(import.meta.dirname, "init.sh");
+
+// True if `cmd` is resolvable on PATH.
+export function haveCommand(cmd: string): boolean {
+    return spawnSync("sh", ["-c", `command -v ${cmd}`]).status === 0;
+}
+
+// Fail fast with an actionable message when a required external CLI isn't installed.
+// The scripts shell out to yt-dlp / ffmpeg; a raw ENOENT deep in a spawn is opaque, so
+// we check up front and route the user to init.sh.
+export function requireCommand(cmd: string, brewPkg?: string): void {
+    if (haveCommand(cmd)) return;
+    const hint = brewPkg ? ` (or: brew install ${brewPkg})` : "";
+    console.error(
+        `ERROR: '${cmd}' is not installed. Run: bash "${INIT_SCRIPT}"${hint}`,
+    );
+    process.exit(1);
+}
 
 const CUE_RE = /(\d\d:\d\d:\d\d\.\d\d\d)\s*-->\s*(\d\d:\d\d:\d\d\.\d\d\d)/;
 const TAG_RE = /<[^>]+>/g;

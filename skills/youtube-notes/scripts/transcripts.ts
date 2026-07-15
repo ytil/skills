@@ -20,6 +20,7 @@ import {
     formatTranscript,
     parseVtt,
     pickSubtitle,
+    requireCommand,
     secToStamp,
     type YtMeta,
 } from "./lib.ts";
@@ -113,6 +114,7 @@ function main(): void {
         console.error("usage: transcripts.ts <workdir> <url>...");
         process.exit(1);
     }
+    requireCommand("yt-dlp", "yt-dlp");
     const workdir = argv[0] as string;
     const urls = argv.slice(1);
     mkdirSync(workdir, { recursive: true });

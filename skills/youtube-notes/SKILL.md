@@ -69,11 +69,14 @@ Note: nested bullets use a **tab**, and images embed with Obsidian syntax `![[fi
 - The scripts run as **plain TypeScript via `node`** (Node ≥22.18, native type stripping —
   no build step). Invoke them as `node <skill>/scripts/<name>.ts`, where `<skill>` is this
   skill's base directory (Claude Code shows it when the skill loads).
-- **First-use setup:** the contact-sheet step needs one npm dependency (`jimp`, used to burn
-  the timecode label onto each thumbnail). If `<skill>/scripts/node_modules` is missing,
-  run `npm install --no-fund --no-audit` in `<skill>/scripts/` once before using the skill.
-- `yt-dlp` and `ffmpeg` must be installed (via Homebrew). If `fetch.ts` reports one missing,
-  tell the user the exact `brew install` command and stop.
+- **First-use setup:** run `bash <skill>/scripts/init.sh` once. It verifies Node, installs the
+  external CLI tools (`yt-dlp`, `ffmpeg`) via whatever package manager is present — Homebrew on
+  macOS, or `apt`/`dnf`/`yum`/`pacman`/`zypper`/`apk` on Linux — and restores the npm dependency
+  (`jimp`, used to burn timecode labels onto thumbnails — it's gitignored, so absent after a fresh
+  clone). The script is idempotent; re-running it with everything present is a green no-op. If it
+  reports something it can't fix itself — Node too old, or no package manager found — relay that to
+  the user and stop. Every script also fails fast with a message pointing back at `init.sh` if a
+  dependency is missing at runtime, so you don't have to pre-flight manually.
 
 Do all downloading and frame extraction in a **scratchpad workdir**, never in the vault.
 Only the final `.md` and the chosen `.png` screenshots are written into the vault.
@@ -225,8 +228,11 @@ matters for trust.
 ## Scripts reference
 
 Run each as `node <skill>/scripts/<name>.ts ...`. They shell out to `yt-dlp` and `ffmpeg`;
-`contact_sheet.ts` additionally uses `jimp` (installed once via `npm install` in `scripts/`).
+`contact_sheet.ts` additionally uses `jimp` (restored by `init.sh`).
 
+- `scripts/init.sh` — one-shot setup/restore: verify Node, install the missing CLI tools via the
+  platform package manager (Homebrew / apt / dnf / pacman / zypper / apk), `npm install` the
+  gitignored `jimp`. Idempotent; run once before first use. Not a `node` script.
 - `scripts/fetch.ts <url> <workdir> [--lang XX] [--scene 0.4]` — download subs+video,
   clean transcript, detect scenes, write `meta.json`. `--scene` lowers/raises scene
   sensitivity (more/fewer candidates); `--lang` forces a subtitle language.

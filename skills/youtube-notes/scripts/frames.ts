@@ -17,6 +17,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
+import { requireCommand } from "./lib.ts";
+
 // Replicate Python's `f"{seconds:07.1f}"`: one decimal, zero-padded to width 7
 // (e.g. 89.7 -> "00089.7", 409.8 -> "00409.8").
 function fmt071(x: number): string {
@@ -56,6 +58,7 @@ function main(): void {
         );
         process.exit(1);
     }
+    requireCommand("ffmpeg", "ffmpeg");
     const video = argv[0] as string;
     const outdir = argv[1] as string;
     let offset = 0.0;

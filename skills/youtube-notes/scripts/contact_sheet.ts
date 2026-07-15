@@ -16,11 +16,27 @@
 // moment. Sheets are written as sheet_00.jpg, sheet_01.jpg, ...
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
-import { Jimp, JimpMime, loadFont, measureText, measureTextHeight } from "jimp";
-import { SANS_32_WHITE } from "jimp/fonts";
+import { INIT_SCRIPT, requireCommand } from "./lib.ts";
+
+// jimp is an npm dependency (restored by scripts/init.sh) and is gitignored, so it's
+// absent after a fresh clone. Import it dynamically so a missing package produces an
+// actionable message instead of an opaque ERR_MODULE_NOT_FOUND at load time.
+let jimp: typeof import("jimp");
+let jimpFonts: typeof import("jimp/fonts");
+try {
+    jimp = await import("jimp");
+    jimpFonts = await import("jimp/fonts");
+} catch {
+    console.error(
+        `ERROR: npm package 'jimp' is not installed. Run: bash "${INIT_SCRIPT}"`,
+    );
+    process.exit(1);
+}
+const { Jimp, JimpMime, loadFont, measureText, measureTextHeight } = jimp;
+const { SANS_32_WHITE } = jimpFonts;
 
 const THUMB_W = 320;
 const THUMB_H = 180;
@@ -74,7 +90,12 @@ function loadTimes(args: string[]): number[] {
         const out: number[] = [];
         for (const a of args.slice(ti + 1)) {
             if (a.startsWith("--")) break;
-            out.push(Number(a));
+            // Split each arg on whitespace so a single quoted "12 27 40" behaves the same
+            // as three separate args — shells disagree on word-splitting an unquoted $var
+            // (zsh keeps it one token), which otherwise yields a single NaN timecode.
+            for (const piece of a.split(/\s+/)) {
+                if (piece) out.push(Number(piece));
+            }
         }
         return out;
     }
@@ -107,6 +128,7 @@ async function main(): Promise<void> {
     const cols = getOpt(args, "--cols", 5);
     const rows = getOpt(args, "--rows", 4);
     const per = cols * rows;
+    requireCommand("ffmpeg", "ffmpeg");
     mkdirSync(outdir, { recursive: true });
 
     // 1. Extract downscaled thumbnails in ascending time order.
@@ -114,7 +136,7 @@ async function main(): Promise<void> {
     for (let i = 0; i < times.length; i++) {
         const t = times[i] as number;
         const src = join(tmp, `src_${String(i).padStart(4, "0")}.jpg`);
-        spawnSync(
+        const r = spawnSync(
             "ffmpeg",
             [
                 "-y",
@@ -133,6 +155,15 @@ async function main(): Promise<void> {
             ],
             { encoding: "utf-8" },
         );
+        // Fail loudly if a frame didn't get written — otherwise the next step (jimp) throws
+        // an opaque "could not load buffer" and hides the real cause (e.g. a bad timecode).
+        if (r.status !== 0 || !existsSync(src)) {
+            throw new Error(
+                `ffmpeg failed to extract a frame at t=${t}s ` +
+                    `(status=${r.status}, signal=${r.signal}): ` +
+                    String(r.error ?? r.stderr ?? "").slice(-300),
+            );
+        }
         await stampTimecode(src, `${t.toFixed(1)}s`);
     }
 

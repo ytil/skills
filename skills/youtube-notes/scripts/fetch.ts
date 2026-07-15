@@ -26,6 +26,7 @@ import {
     formatTranscript,
     parseVtt,
     pickSubtitle,
+    requireCommand,
     secToStamp,
     type SubtitleKind,
     type YtMeta,
@@ -40,10 +41,6 @@ function die(msg: string, code = 1): never {
 
 function run(cmd: string, args: string[]): SpawnSyncReturns<string> {
     return spawnSync(cmd, args, { encoding: "utf-8", maxBuffer: MAX_BUFFER });
-}
-
-function haveCommand(cmd: string): boolean {
-    return spawnSync("sh", ["-c", `command -v ${cmd}`]).status === 0;
 }
 
 function downloadSubtitle(
@@ -125,10 +122,8 @@ function main(): void {
             sceneThreshold = Number(argv[i + 1]);
     }
 
-    if (!haveCommand("yt-dlp"))
-        die("yt-dlp is not installed. Install it with: brew install yt-dlp");
-    if (!haveCommand("ffmpeg"))
-        die("ffmpeg is not installed. Install it with: brew install ffmpeg");
+    requireCommand("yt-dlp", "yt-dlp");
+    requireCommand("ffmpeg", "ffmpeg");
     mkdirSync(workdir, { recursive: true });
 
     console.error("→ Fetching metadata...");
