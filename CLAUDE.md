@@ -14,10 +14,9 @@ Personal agent-skills monorepo, shipped as a Claude Code + Codex plugin marketpl
 
 - `npm run format` — Prettier, 4-space indent (see `package.json`). No build or tests for the repo itself.
 
-## Keep plugins in sync before pushing
+## Before every push
 
-The plugin manifests do not auto-derive from `skills/`. When you add, remove, rename, or change what a skill exposes, update them in the same change:
+The plugin manifests do not auto-derive from `skills/` — keep them in sync by hand:
 
-- Bump `version` identically in all three: `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`.
-- Update the skill list in `.claude-plugin/plugin.json` `skills[]` (Codex's `plugin.json` globs `./skills/`, so it needs no list), and refresh `keywords`/`description` wherever the set changed.
-- Mirror the change in `README.md` (skill list + Layout tree).
+- **Bump the version on every push** — increment `version` identically (patch by default; minor/major for larger changes) in all three: `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`. They must always match.
+- When you add, remove, rename, or change what a skill exposes, also update the skill list in `.claude-plugin/plugin.json` `skills[]` (Codex's `plugin.json` globs `./skills/`, so it needs no list), refresh `keywords`/`description`, and mirror the change in `README.md` (skill list + Layout tree).
