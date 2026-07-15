@@ -5,7 +5,7 @@ Personal agent skills for Codex, Claude Code, and other Agent Skills-compatible 
 ## Skills
 
 - `agents-md` - write or review AGENTS.md/CLAUDE.md agent-context files: ten principles, a verification-first review checklist, and AGENTS.md↔CLAUDE.md cross-tool interop. Sourced from [HumanLayer's "Writing a good CLAUDE.md"](https://www.humanlayer.dev/blog/writing-a-good-claude-md).
-- `brainstorming-handoff` - clarify feature, refactor, product, or behavior ideas before implementation and end with a structured design handoff.
+- `brainstorming-handoff` - clarify feature, refactor, product, or behavior ideas before implementation and end with a structured design handoff. Inspired by the [Superpowers](https://github.com/obra/superpowers) `brainstorming` skill by Jesse Vincent / obra.
 - `cross-review` - run a read-only analysis task through Claude and Codex in parallel, cross-review the two analyses against the real code, and synthesize one verdict. Subscription auth only (Claude Agent SDK + Codex SDK).
 - `stage-orchestrator` - orchestrate a multi-stage refactor or build over delegated work: author self-contained stage prompts with a git-worktree contract, then verify each returned stage (full gate, adversarial review workflow, machine-checked claims) before landing it on main.
 - `youtube-notes` - turn a YouTube video into a distilled Russian-language Obsidian note with screenshots of the important on-screen moments. TypeScript scripts drive `yt-dlp` + `ffmpeg`; run `bash skills/youtube-notes/scripts/init.sh` once before first use to install/restore dependencies.
