@@ -1,0 +1,732 @@
+<meta charset="utf-8">
+<title>Stage Orchestrator — карта процесса</title>
+<style>
+  :root {
+    --ground: #f4f6f2;
+    --surface: #ffffff;
+    --ink: #212a28;
+    --muted: #5d6b67;
+    --hairline: #d7ddd7;
+    --main: #0e6e63;      /* петроль — main / оркестратор */
+    --main-soft: #e3efec;
+    --wt: #b0611d;        /* медь — worktree / внешний агент */
+    --wt-soft: #f6ead9;
+    --ok: #2f7d46;
+    --ok-soft: #e2efe4;
+    --bad: #b23a36;
+    --bad-soft: #f5e3e1;
+    --code-bg: #ebefe9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #151a19;
+      --surface: #1e2523;
+      --ink: #e6ebe7;
+      --muted: #96a49e;
+      --hairline: #333d39;
+      --main: #43b3a2;
+      --main-soft: #1c322e;
+      --wt: #d99049;
+      --wt-soft: #362a1c;
+      --ok: #63b578;
+      --ok-soft: #21332a;
+      --bad: #d97d76;
+      --bad-soft: #3a2523;
+      --code-bg: #29312d;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #f4f6f2; --surface: #ffffff; --ink: #212a28; --muted: #5d6b67;
+    --hairline: #d7ddd7; --main: #0e6e63; --main-soft: #e3efec;
+    --wt: #b0611d; --wt-soft: #f6ead9; --ok: #2f7d46; --ok-soft: #e2efe4;
+    --bad: #b23a36; --bad-soft: #f5e3e1; --code-bg: #ebefe9;
+  }
+  :root[data-theme="dark"] {
+    --ground: #151a19; --surface: #1e2523; --ink: #e6ebe7; --muted: #96a49e;
+    --hairline: #333d39; --main: #43b3a2; --main-soft: #1c322e;
+    --wt: #d99049; --wt-soft: #362a1c; --ok: #63b578; --ok-soft: #21332a;
+    --bad: #d97d76; --bad-soft: #3a2523; --code-bg: #29312d;
+  }
+
+  html { background: var(--ground); }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: Charter, Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  .mono, code, .chip, .eyebrow, .lane-tag, .step-no, .pill {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.82em;
+    white-space: nowrap;
+  }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  p { margin: 0; }
+  a { color: var(--main); }
+
+  /* ---------- header ---------- */
+  .eyebrow {
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px;
+  }
+  .eyebrow b { color: var(--main); font-weight: 600; }
+  header h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.12; font-weight: 700; }
+  header .lede {
+    margin-top: 16px; max-width: 62ch; color: var(--muted); font-size: 17px;
+  }
+  header .lede strong { color: var(--ink); font-weight: 600; }
+
+  .modes { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+  .mode {
+    flex: 1 1 260px; background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: 4px; padding: 14px 16px;
+  }
+  .mode .chip { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+  .mode.author .chip { color: var(--main); }
+  .mode.verify .chip { color: var(--wt); }
+  .mode p { margin-top: 6px; font-size: 14.5px; color: var(--muted); }
+
+  /* ---------- rhythm strip ---------- */
+  .rhythm {
+    margin-top: 36px; background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: 4px; padding: 18px 20px;
+  }
+  .rhythm .label { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .rhythm-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px;
+  }
+  .pill {
+    border: 1px solid var(--hairline); border-radius: 999px; padding: 5px 14px;
+    font-size: 13px; background: var(--ground); white-space: nowrap;
+  }
+  .pill.git { border-color: var(--main); color: var(--main); font-weight: 600; }
+  .pill.loop { border-style: dashed; color: var(--muted); }
+  .rhythm-row .arr { color: var(--muted); font-size: 14px; }
+  .rhythm p.note { margin-top: 12px; font-size: 14px; color: var(--muted); max-width: 70ch; }
+
+  /* ---------- section headers ---------- */
+  section { margin-top: 56px; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; border-bottom: 1px solid var(--hairline); padding-bottom: 10px; }
+  .sec-head h2 { font-size: 24px; font-weight: 700; }
+  .sec-head .chip { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .sec-sub { margin-top: 10px; color: var(--muted); font-size: 15px; max-width: 72ch; }
+
+  /* ---------- swimlane diagram ---------- */
+  .lane-heads {
+    display: grid; grid-template-columns: 1fr 76px 1fr; gap: 0 16px;
+    margin-top: 26px;
+  }
+  .lane-tag {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;
+    padding-bottom: 10px;
+  }
+  .lane-tag.l-main { color: var(--main); text-align: right; }
+  .lane-tag.l-wt { color: var(--wt); }
+
+  .flow { display: grid; grid-template-columns: 1fr 76px 1fr; gap: 0 16px; }
+  .cell { min-height: 10px; padding-bottom: 18px; }
+  .rail { position: relative; padding-bottom: 0; }
+  .rail .ln { position: absolute; top: 0; bottom: 0; width: 2px; }
+  .rail .ln.m { left: 24px; background: var(--main); }
+  .rail .ln.w { left: 50px; background: var(--wt); }
+  .rail .ln.half-top { bottom: auto; height: 24px; }
+  .rail .dot {
+    position: absolute; width: 10px; height: 10px; border-radius: 50%;
+    top: 20px; box-shadow: 0 0 0 3px var(--ground);
+  }
+  .rail .dot.m { left: 20px; background: var(--main); }
+  .rail .dot.w { left: 46px; background: var(--wt); }
+  .rail svg { display: block; }
+
+  .node {
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px;
+    padding: 13px 16px 14px;
+  }
+  .node.on-main { border-left: 3px solid var(--main); }
+  .node.on-wt { border-left: 3px solid var(--wt); }
+  .node .step-no { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--muted); }
+  .node.on-main .step-no { color: var(--main); }
+  .node.on-wt .step-no { color: var(--wt); }
+  .node h3 { font-size: 16.5px; margin-top: 3px; font-weight: 700; }
+  .node p { margin-top: 6px; font-size: 14px; color: var(--muted); }
+  .node p strong { color: var(--ink); }
+  .node ul { margin: 8px 0 0; padding-left: 18px; font-size: 14px; color: var(--muted); }
+  .node li { margin-top: 4px; }
+  .node li::marker { color: var(--hairline); }
+  .node li strong { color: var(--ink); }
+  .node .ref { display: block; margin-top: 9px; font-size: 12.5px; color: var(--muted); }
+
+  .side-note {
+    font-size: 13.5px; color: var(--muted); padding: 6px 2px 0;
+    max-width: 34ch;
+  }
+  .side-note.right { text-align: left; }
+  .side-note.left { text-align: right; margin-left: auto; }
+
+  .branch-label {
+    font-size: 12.5px; letter-spacing: 0.02em;
+    color: var(--muted); padding-top: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .branch-label.to-wt { text-align: left; }
+  .branch-label.to-main { text-align: right; }
+
+  .fork {
+    background: var(--surface); border: 1px dashed var(--hairline); border-radius: 4px;
+    padding: 13px 16px 14px;
+  }
+  .fork h3 { font-size: 15.5px; }
+  .fork .out { display: flex; gap: 8px; margin-top: 9px; align-items: baseline; font-size: 14px; }
+  .fork .tag { flex: none; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 3px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .fork .tag.yes { background: var(--ok-soft); color: var(--ok); }
+  .fork .tag.no { background: var(--bad-soft); color: var(--bad); }
+  .fork .out p { color: var(--muted); }
+
+  .loop-back {
+    grid-column: 1 / -1; text-align: center; padding: 4px 0 0;
+    font-size: 13px; color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  /* ---------- review pipeline ---------- */
+  .pipe { margin-top: 26px; overflow-x: auto; padding-bottom: 6px; }
+  .pipe-inner { display: flex; align-items: stretch; gap: 0; min-width: 820px; }
+  .stage-col { flex: 1 1 0; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+  .stage-col > .st-label {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;
+    color: var(--muted); margin-bottom: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .box {
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px;
+    padding: 10px 12px; font-size: 13.5px;
+  }
+  .box .t { font-weight: 700; font-size: 13px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .box p { color: var(--muted); margin-top: 3px; font-size: 13px; }
+  .box.dim .t { color: var(--main); }
+  .box.verd-ok { border-left: 3px solid var(--ok); }
+  .box.verd-bad { border-left: 3px solid var(--bad); }
+  .box.common { border-left: 3px solid var(--main); }
+  .pipe-arrow {
+    flex: 0 0 44px; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 18px;
+  }
+  .pipe-note { margin-top: 14px; font-size: 14px; color: var(--muted); max-width: 76ch; }
+  .pipe-note strong { color: var(--ink); }
+
+  /* ---------- principles ---------- */
+  .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; }
+  .prin {
+    background: var(--surface); border: 1px solid var(--hairline); border-top: 3px solid var(--main);
+    border-radius: 4px; padding: 16px;
+  }
+  .prin .num { font-size: 12px; color: var(--main); font-weight: 700; letter-spacing: 0.1em;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .prin h3 { font-size: 16px; margin-top: 6px; }
+  .prin p { margin-top: 8px; font-size: 14px; color: var(--muted); }
+  .prin p strong { color: var(--ink); }
+
+  /* ---------- closing audit ---------- */
+  .close-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+  .close-grid .rule .num {
+    font-size: 12px; color: var(--main); font-weight: 700; letter-spacing: 0.1em;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    display: block; margin-bottom: 4px;
+  }
+  .dims { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .dims span {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px; color: var(--main); background: var(--main-soft);
+    border-radius: 3px; padding: 2px 8px;
+  }
+
+  /* ---------- runtime split ---------- */
+  .rt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  .rt {
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px;
+    padding: 13px 16px;
+  }
+  .rt .chip { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+  .rt.claude { border-top: 3px solid var(--main); } .rt.claude .chip { color: var(--main); }
+  .rt.codex { border-top: 3px solid var(--wt); } .rt.codex .chip { color: var(--wt); }
+  .rt p { margin-top: 6px; font-size: 14px; color: var(--muted); }
+  .rt p strong { color: var(--ink); }
+
+  /* ---------- parallel ---------- */
+  .par-grid { display: grid; grid-template-columns: 220px 1fr; gap: 20px; margin-top: 24px; align-items: start; }
+  .par-fig { background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px; padding: 14px; }
+  .par-fig svg { display: block; width: 100%; height: auto; }
+  .par-rules { display: flex; flex-direction: column; gap: 12px; }
+  .rule { background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px; padding: 12px 15px; font-size: 14px; }
+  .rule b { display: block; font-size: 14.5px; }
+  .rule span { color: var(--muted); }
+
+  /* ---------- scaling table ---------- */
+  .scale { margin-top: 24px; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  th { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { font-weight: 700; white-space: nowrap; }
+  td { color: var(--muted); } td:first-child { color: var(--ink); }
+
+  /* ---------- files footer ---------- */
+  .files { margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .file { background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px; padding: 12px 14px; font-size: 13px; }
+  .file .fn { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-weight: 700; font-size: 12.5px; color: var(--main); word-break: break-word; }
+  .file p { color: var(--muted); margin-top: 4px; font-size: 13px; }
+
+  footer { margin-top: 60px; border-top: 1px solid var(--hairline); padding-top: 16px;
+    font-size: 13px; color: var(--muted); }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 760px) {
+    .flow, .lane-heads { grid-template-columns: 1fr; }
+    .rail, .lane-tag { display: none; }
+    .side-note { max-width: none; text-align: left; padding: 0 2px 14px; }
+    .side-note.left { margin-left: 0; text-align: left; }
+    .branch-label { padding: 2px 0 14px; text-align: left !important; }
+    .node::before {
+      content: attr(data-lane);
+      display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 1px 7px; border-radius: 3px; margin-bottom: 7px;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    .node.on-main::before { background: var(--main-soft); color: var(--main); }
+    .node.on-wt::before { background: var(--wt-soft); color: var(--wt); }
+    .principles { grid-template-columns: 1fr; }
+    .par-grid { grid-template-columns: 1fr; }
+    .close-grid, .rt-grid { grid-template-columns: 1fr; }
+    .files { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">skill · <b>stage-orchestrator</b> · карта процесса</div>
+    <h1>Делегируй. Верифицируй. Приземляй.</h1>
+    <p class="lede">Оркестратор длинного многоэтапного рефакторинга не пишет код сам — этапы выполняет внешний агент.
+      Скилл делает делегирование безопасным: <strong>промпт настолько точный, что работа возвращается правильной,
+      и верификация настолько жёсткая, что за результат можно поставить <code>main</code></strong>.
+      Внешний агент способный, но переобещает, молча меняет поведение и замолкает на лимитах.
+      Рычаг оркестратора — скептицизм плюс машинно-проверяемые доказательства.</p>
+
+    <div class="modes">
+      <div class="mode author">
+        <span class="chip">Режим 1 · Author</span>
+        <p>Предстоит делегировать этап: синхронизироваться, написать самодостаточный stage-промпт с контрактом worktree.</p>
+      </div>
+      <div class="mode verify">
+        <span class="chip">Режим 2 · Verify</span>
+        <p>Пришёл отчёт: доказать или опровергнуть его до коммита. Несущий режим — отчёт это заявление, не доказательство.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="rhythm">
+    <span class="label">Ритм итерации</span>
+    <div class="rhythm-row">
+      <span class="pill git">git pull</span><span class="arr">→</span>
+      <span class="pill">делегировать</span><span class="arr">→</span>
+      <span class="pill">верифицировать</span><span class="arr">→</span>
+      <span class="pill">приземлить</span><span class="arr">→</span>
+      <span class="pill git">git push</span><span class="arr">→</span>
+      <span class="pill loop">↻ следующий этап</span>
+    </div>
+    <p class="note">Pull и push — два шага, которые забываются легче всего, и у каждого пропуска есть цена:
+      устаревшая база оборачивается merge-конфликтами при приземлении, а незапушенный этап невидим для CI
+      и для всего, что базируется на remote. Когда лёг последний этап — не «готово», а финальный
+      аудит приёмки (внизу страницы).</p>
+  </div>
+
+  <!-- ================= main flow ================= -->
+  <section>
+    <div class="sec-head"><h2>Один этап: от pull до push</h2><span class="chip">swimlane</span></div>
+    <p class="sec-sub">Две дорожки: петролевая — <code>main</code> и действия оркестратора,
+      медная — detached worktree, где работает внешний агент. Ветка отрастает при делегировании
+      и вливается обратно только после полной верификации.</p>
+
+    <div class="lane-heads">
+      <span class="lane-tag l-main">main · оркестратор</span>
+      <span></span>
+      <span class="lane-tag l-wt">worktree · внешний агент</span>
+    </div>
+
+    <div class="flow">
+
+      <!-- 1. git pull -->
+      <div class="cell">
+        <div class="node on-main" data-lane="main · оркестратор">
+          <span class="step-no">Шаг 1 · Sync</span>
+          <h3>Синхронизация с remote</h3>
+          <p><code>git pull</code> целевой ветки перед авторингом. Remote мог уйти вперёд —
+            этап, построенный от устаревшей базы, расплатится за это при приземлении.</p>
+        </div>
+      </div>
+      <div class="cell rail"><span class="ln m"></span><span class="dot m"></span></div>
+      <div class="cell"></div>
+
+      <!-- 2. author -->
+      <div class="cell">
+        <div class="node on-main" data-lane="main · оркестратор">
+          <span class="step-no">Шаг 2 · Author</span>
+          <h3>Stage-промпт — весь контракт</h3>
+          <ul>
+            <li><strong>Read-first</strong> по точным ссылкам: секции плана, файлы-образцы.</li>
+            <li><strong>Порядок работ</strong>: по одной сущности, гейт зелёный после каждого юнита.</li>
+            <li><strong>СТОП-условия</strong> вместо догадок: неизвестное превращается в решение оркестратора.</li>
+            <li><strong>«Что НЕ делать»</strong> — отложенные файлы и этапы названы явно.</li>
+            <li><strong>Отчёт в формате для верификации</strong>: то, что нельзя проверить grep-ом, нельзя и доверять.</li>
+          </ul>
+          <span class="ref">→ references/stage-prompt.md</span>
+        </div>
+      </div>
+      <div class="cell rail"><span class="ln m"></span><span class="dot m"></span></div>
+      <div class="cell"><p class="side-note right">Контракт worktree: агент обязан создать отдельный detached
+        <code>git worktree</code>, править только в нём и назвать его абсолютный путь в отчёте. Не может — СТОП.</p></div>
+
+      <!-- branch -->
+      <div class="cell"></div>
+      <div class="cell rail" style="height:52px">
+        <svg width="76" height="52" viewBox="0 0 76 52" aria-hidden="true">
+          <line x1="25" y1="0" x2="25" y2="52" stroke="var(--main)" stroke-width="2"/>
+          <path d="M25,6 C25,38 51,18 51,52" fill="none" stroke="var(--wt)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="cell"><div class="branch-label to-wt">git worktree add --detach</div></div>
+
+      <!-- 3. implement -->
+      <div class="cell"></div>
+      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span><span class="dot w"></span></div>
+      <div class="cell">
+        <div class="node on-wt" data-lane="worktree · агент">
+          <span class="step-no">Шаг 3 · Implement</span>
+          <h3>Агент реализует этап</h3>
+          <p>Все правки — только внутри worktree, без веток и коммитов. Гейт зелёный после каждого юнита;
+            на непокрытой предпосылке — СТОП и доклад, а не правдоподобная выдумка.
+            Для большого этапа допустим зелёный частичный срез с картой остатка.</p>
+        </div>
+      </div>
+
+      <!-- 4. report -->
+      <div class="cell"></div>
+      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span><span class="dot w"></span></div>
+      <div class="cell">
+        <div class="node on-wt" data-lane="worktree · агент">
+          <span class="step-no">Шаг 4 · Report</span>
+          <h3>Отчёт возвращается</h3>
+          <p>Первой строкой — абсолютный путь worktree и base commit; затем карта per-entity,
+            именованные дельты тестов, санкционированные отклонения, встреченные СТОПы.
+            <strong>Без пути и базы отчёт неполный</strong> — не верифицировать чекаут оркестратора по ошибке.</p>
+        </div>
+      </div>
+
+      <!-- 5. verify loop -->
+      <div class="cell">
+        <div class="node on-main" data-lane="main · оркестратор">
+          <span class="step-no">Шаг 5 · Verify</span>
+          <h3>Верификация — против worktree</h3>
+          <ul>
+            <li><strong>Полный гейт в фоне</strong> в worktree (<code>pnpm qa</code> или аналог из gate-playbook) — ревью идёт параллельно.</li>
+            <li><strong>Инвентаризация диффа</strong>: масштаб калибрует глубину; untracked-файлы отдельно — <code>git diff</code> их не показывает.</li>
+            <li><strong>Адверсариальное ревью</strong> Workflow-ом: finders → verifiers (схема ниже).</li>
+            <li><strong>Машинная проверка claims самому</strong>: grep по имени символа (alias-aware, минус тесты),
+              компиляция SQL вместо чтения, дамп и diff схем, негативный тест для «гейты эквивалентны».</li>
+            <li><strong>Реконсиляция</strong>: выжившие находки в их итоговой severity + собственные находки.
+              Свой grep бьёт мнение агента; спор двух агентов решается чтением кода.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span><span class="dot m"></span></div>
+      <div class="cell"><p class="side-note right">Разведка галлюцинирует: «0 refs» и «fully removed» в отчёте —
+        это заявления. Каждое «удалено / мигрировано / эквивалентно» проверяется машиной.</p></div>
+
+      <!-- fork -->
+      <div class="cell">
+        <div class="fork">
+          <span class="step-no">Развилка</span>
+          <h3>Подход верен — или только исполнение?</h3>
+          <div class="out"><span class="tag no">нет</span>
+            <p>Блокер в самом дизайне (не тот слой, выдуманный контракт, неверно прочитанный план) —
+              не латать: выбросить worktree, принять решение самому и <strong>ре-делегировать</strong> этап
+              новым промптом ↺ к шагу 2.</p></div>
+          <div class="out"><span class="tag yes">да</span>
+            <p>Детали поехали — чинится. Дальше по циклу.</p></div>
+        </div>
+      </div>
+      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span></div>
+      <div class="cell"></div>
+
+      <!-- 6. fixes -->
+      <div class="cell"><p class="side-note left">Оркестратор остаётся ревьюером и коммитером:
+        механические правки — вне его контекста, зеркаля тот же split «делегируй → проверь».</p></div>
+      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span><span class="dot w"></span></div>
+      <div class="cell">
+        <div class="node on-wt" data-lane="worktree · fix-субагент">
+          <span class="step-no">Шаг 6 · Fix</span>
+          <h3>Фиксы — через субагента, если runtime его имеет</h3>
+          <p>Весь подтверждённый набор — файл, строка, доказательство, замысел фикса — одному fix-субагенту,
+            правки <strong>в том же worktree</strong>, где гонялись гейт и ревью.
+            Без субагентов (Codex) — правишь сам по <strong>замороженному</strong> набору, не пересматривая
+            находки в процессе. Чинится всё, включая миноры: отложенный минор просто переоткроется этапом позже.</p>
+        </div>
+      </div>
+
+      <!-- 7. re-gate -->
+      <div class="cell"></div>
+      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span><span class="dot w"></span></div>
+      <div class="cell">
+        <div class="node on-wt" data-lane="worktree">
+          <span class="step-no">Шаг 7 · Re-gate</span>
+          <h3>Полный гейт заново</h3>
+          <p>Любая правка переоткрывает гейт. Классическая рана — закоммитить после фикса,
+            прогнав только typecheck: зелёный typecheck ≠ зелёные knip и format.</p>
+        </div>
+      </div>
+
+      <!-- merge -->
+      <div class="cell"><div class="branch-label to-main">git cherry-pick &lt;sha&gt;</div></div>
+      <div class="cell rail" style="height:52px">
+        <svg width="76" height="52" viewBox="0 0 76 52" aria-hidden="true">
+          <line x1="25" y1="0" x2="25" y2="52" stroke="var(--main)" stroke-width="2"/>
+          <path d="M51,0 C51,34 25,14 25,48" fill="none" stroke="var(--wt)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="cell"></div>
+
+      <!-- 8. land -->
+      <div class="cell">
+        <div class="node on-main" data-lane="main · оркестратор">
+          <span class="step-no">Шаг 8 · Land</span>
+          <h3>Приземление на main</h3>
+          <ul>
+            <li>Сначала <code>git pull</code> на <code>main</code> — конфликты должны всплыть, пока свидетельства гейта свежие, а не при push.</li>
+            <li>Коммит <strong>внутри worktree</strong>: <code>git -C wt add -A &amp;&amp; git -C wt commit</code> —
+              голый <code>diff | apply</code> молча теряет untracked-файлы.</li>
+            <li><code>git cherry-pick &lt;sha&gt;</code> в чекаут оркестратора — object database общая.</li>
+            <li>База уехала → это настоящий three-way merge: полный гейт на <code>main</code> заново
+              и перепроверка claims по затронутым файлам.</li>
+            <li>Зелено → <code>git worktree remove</code>.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="cell rail"><span class="ln m"></span><span class="dot m"></span></div>
+      <div class="cell"></div>
+
+      <!-- 9. push -->
+      <div class="cell">
+        <div class="node on-main" data-lane="main · оркестратор">
+          <span class="step-no">Шаг 9 · Push</span>
+          <h3>Push, коммит-месседж, память</h3>
+          <p>Один коммит на этап: что сделал этап, что починили после ревью, известные transient-ы.
+            <code>git push</code> до старта следующего этапа — стопка незапушенных этапов превращает
+            итоговый push в ставку на всё сразу. Push отклонён → <code>git pull --rebase</code>,
+            резолв, полный гейт (ребейз — такая же правка), push.
+            В память проекта — хеш коммита и выученные gotchas.</p>
+        </div>
+      </div>
+      <div class="cell rail"><span class="ln m half-top"></span><span class="dot m"></span></div>
+      <div class="cell"></div>
+
+      <div class="loop-back">↻ следующий этап: снова git pull</div>
+    </div>
+  </section>
+
+  <!-- ================= adversarial review ================= -->
+  <section>
+    <div class="sec-head"><h2>Адверсариальное ревью</h2><span class="chip">workflow · шаг 5.3</span></div>
+    <p class="sec-sub">Один <strong>finder</strong> на независимое измерение диффа; каждую находку — включая миноры —
+      атакует отдельный <strong>verifier</strong>, чья работа — <em>опровергнуть</em>. Pipeline, не barrier:
+      находки измерения верифицируются, как только его finder вернулся.</p>
+
+    <div class="pipe"><div class="pipe-inner">
+      <div class="stage-col">
+        <span class="st-label">Common</span>
+        <div class="box common">
+          <span class="t">COMMON-преамбула</span>
+          <p>База, что заявлено, что <em>санкционировано</em> (не флагать намеренное); гейт идёт параллельно — не запускать; пустой список находок валиден.</p>
+        </div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="stage-col">
+        <span class="st-label">Finders · по измерениям</span>
+        <div class="box dim"><span class="t">behavioral-equivalence</span><p>поведение не изменилось; SQL — компилировать и diff-ить</p></div>
+        <div class="box dim"><span class="t">residue</span><p>мёртвые экспорты, осиротевшие barrel-ы, test-only-live</p></div>
+        <div class="box dim"><span class="t">tests-integrity</span><p>ассерты не ослаблены; изменённое ожидание = находка</p></div>
+        <div class="box dim"><span class="t">contract-fidelity</span><p>схема зеркалит источник — дамп и diff скриптом</p></div>
+        <div class="box dim"><span class="t">money-path</span><p>auth, покупки, миграции, sync — больше голосов</p></div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="stage-col">
+        <span class="st-label">Verifiers · опровергнуть</span>
+        <div class="box">
+          <span class="t">на каждую находку</span>
+          <p>компенсирующий код? неверно прочитанный дифф? санкционированное решение?
+            Реальна, но severity мимо → <code>adjustedSeverity</code>.</p>
+        </div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="stage-col">
+        <span class="st-label">Вердикт</span>
+        <div class="box verd-ok"><span class="t">confirmed</span><p>выжила опровержение — в набор фиксов, в итоговой severity</p></div>
+        <div class="box verd-bad"><span class="t">refuted</span><p>правдоподобная-но-неверная — отброшена, ничего «не чинится»</p></div>
+      </div>
+    </div></div>
+
+    <p class="pipe-note"><strong>Масштаб под запрос:</strong> измерения выбираются из того, что этап реально трогал,
+      а не из фиксированного списка. Ревью — широкая сеть, не замена собственным machine-check-ам поверх.
+      Метод общий (review-workflow.md), механика исполнения — своя на runtime:</p>
+
+    <div class="rt-grid">
+      <div class="rt claude">
+        <span class="chip">Claude Code · review-runtime-claude.md</span>
+        <p><strong>Полная форма метода.</strong> Workflow-скрипт: finders и verifiers — параллельные
+          изолированные агенты, слепые друг к другу; JSON-контракт валидируется на уровне tool-call
+          (кривой ответ ретраится сам); гейт крутится в фоне параллельно ревью.</p>
+      </div>
+      <div class="rt codex">
+        <span class="chip">Codex · review-runtime-codex.md</span>
+        <p><strong>Деградационный путь.</strong> Гейт первым и до конца; измерения по одному с
+          пере-выводом из реального диффа; находки замораживаются до верификации; refuter-проход —
+          отдельным <strong>codex exec</strong>, где возможно; JSON валидируешь сам. Компенсация:
+          больший вес собственным machine-check-ам.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= principles ================= -->
+  <section>
+    <div class="sec-head"><h2>Три принципа, на которых стоит цикл</h2><span class="chip">выстрадано</span></div>
+    <div class="principles">
+      <div class="prin">
+        <span class="num">I</span>
+        <h3>«Оба гейта зелёные» ≠ эквивалентность</h3>
+        <p>Зелёный на чистом коде доказывает лишь, что ни один гейт не <em>срабатывает</em> сейчас.
+          Доказательство эквивалентности — <strong>негативный тест</strong>: внести нарушение,
+          убедиться, что ловят <em>оба</em> механизма, откатить.</p>
+      </div>
+      <div class="prin">
+        <span class="num">II</span>
+        <h3>Разведка галлюцинирует — grep по символу</h3>
+        <p>Агент уверенно доложит «файл удалён, ссылок нет» — и ошибётся, потому что grep-ал относительный путь,
+          а импорт шёл через alias. Claims о достижимости — только <strong>grep по имени символа</strong>,
+          alias-aware, с <code>grep -v '\.test\.'</code> для test-only-live.</p>
+      </div>
+      <div class="prin">
+        <span class="num">III</span>
+        <h3>Находки подтверждаются адверсариально</h3>
+        <p>Правдоподобная находка — не реальная. Независимый verifier на каждую пытается её
+          <strong>опровергнуть</strong>: реальные дефекты выживают, остальное отбрасывается или
+          понижается — и «правильное» не «чинится» в неправильное.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= parallel ================= -->
+  <section>
+    <div class="sec-head"><h2>Параллельные этапы</h2><span class="chip">landings serialize</span></div>
+    <div class="par-grid">
+      <div class="par-fig">
+        <svg viewBox="0 0 200 150" aria-label="Несколько worktree от одной базы, приземления по очереди">
+          <line x1="24" y1="8" x2="24" y2="142" stroke="var(--main)" stroke-width="2.5"/>
+          <path d="M24,22 C24,50 78,34 78,58 L78,70 C78,92 24,80 24,96" fill="none" stroke="var(--wt)" stroke-width="2"/>
+          <path d="M24,22 C24,62 128,44 128,72 L128,86 C128,110 24,100 24,118" fill="none" stroke="var(--wt)" stroke-width="2" opacity="0.62"/>
+          <path d="M24,22 C24,74 176,56 176,88 L176,140" fill="none" stroke="var(--wt)" stroke-width="2" stroke-dasharray="4 4" opacity="0.5"/>
+          <circle cx="24" cy="22" r="4.5" fill="var(--main)"/>
+          <circle cx="24" cy="96" r="4.5" fill="var(--main)"/>
+          <circle cx="24" cy="118" r="4.5" fill="var(--main)"/>
+          <text x="34" y="99" font-size="9" fill="var(--muted)" font-family="ui-monospace,Menlo,monospace">land A</text>
+          <text x="34" y="121" font-size="9" fill="var(--muted)" font-family="ui-monospace,Menlo,monospace">land B</text>
+          <text x="140" y="132" font-size="9" fill="var(--muted)" font-family="ui-monospace,Menlo,monospace">C ждёт</text>
+        </svg>
+      </div>
+      <div class="par-rules">
+        <div class="rule"><b>Приземления — строго по одному.</b>
+          <span>Несколько этапов в своих worktree от одной базы — нормально, но шаги 7–9 сериализуются: land A целиком, потом B.</span></div>
+        <div class="rule"><b>После каждого приземления базы остальных устаревают.</b>
+          <span>Их гейты и ревью были относительны старой базы: на их очереди re-gate на <code>main</code> обязателен,
+          плюс перепроверка claims по файлам, которые тронуло раннее приземление.</span></div>
+        <div class="rule"><b>Author-защита: непересекающиеся file sets.</b>
+          <span>Два in-flight промпта трогают один модуль — значит это был один этап: слить или выстроить последовательно, а не гонять наперегонки.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= closing audit ================= -->
+  <section>
+    <div class="sec-head"><h2>Финальный аудит приёмки</h2><span class="chip">closing the effort</span></div>
+    <p class="sec-sub">Последний этап лёг — это не «готово», это «все этапы зелёные». Попэтапная верификация
+      доказала, что каждый этап сделал то, что было в <em>его промпте</em>; никто ещё не доказал, что
+      объединение промптов покрывает <em>исходную задачу</em>. Дыры живут в этом шве: требования, которых
+      не заявил ни один этап, планки качества, которые «держал кто-то другой», миноры, отложенные на
+      этап, которого не случилось.</p>
+    <div class="close-grid">
+      <div class="rule"><span class="num">1 · Требования</span>
+        <b>Воскресить исходную задачу.</b>
+        <span>Вернуться к первоисточнику — документ, план, слова пользователя, — а не к карте этапов:
+          именно при её выводе скоуп незаметно сузился. Требования — в явный чек-лист.</span></div>
+      <div class="rule"><span class="num">2 · Адверс-ревью полноты</span>
+        <b>Та же машинерия, дельта всего усилия.</b>
+        <span>Ревью по <code>git diff &lt;effort-base&gt;..HEAD</code> с измерениями полноты:</span>
+        <div class="dims"><span>requirements-coverage</span><span>scope-fidelity</span><span>quality-bar</span><span>deferred-residue</span></div></div>
+      <div class="rule"><span class="num">3 · Машинная приёмка</span>
+        <b>Прогнать поведение end-to-end.</b>
+        <span>Доказательства вместо нарратива: зелёные гейты доказывают здоровье кода,
+          а не то, что требование выполнено.</span></div>
+      <div class="rule"><span class="num">4 · Gap-лист</span>
+        <b>Каждая дыра — этап или санкция.</b>
+        <span>Подтверждённая дыра становится новым этапом (назад в Author) или явно записанным исключением,
+          подписанным пользователем. Готово — когда список пуст или целиком санкционирован.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= scaling ================= -->
+  <section>
+    <div class="sec-head"><h2>Масштабирование под запрос</h2><span class="chip">калибровка</span></div>
+    <div class="scale">
+      <table>
+        <tr><th>Запрос</th><th>Finders</th><th>Верификация</th><th>Свои machine-checks</th></tr>
+        <tr>
+          <td>«Глянь, похоже ли на правду»</td>
+          <td>пара</td>
+          <td>один голос на находку</td>
+          <td>только несущие claims</td>
+        </tr>
+        <tr>
+          <td>«Тщательно проверь» · 150 файлов · money-path</td>
+          <td>больше, по измерениям</td>
+          <td>3–5 голосов адверсариально</td>
+          <td>полные, поверх ревью</td>
+        </tr>
+      </table>
+    </div>
+    <p class="sec-sub" style="margin-top:14px">Сомневаешься — для ревью и аудита склоняйся к тщательности:
+      цена пропущенной регрессии на <code>main</code> несопоставима с ценой лишнего finder-а.</p>
+  </section>
+
+  <!-- ================= files ================= -->
+  <section>
+    <div class="sec-head"><h2>Из чего состоит скилл</h2><span class="chip">progressive disclosure</span></div>
+    <div class="files">
+      <div class="file"><span class="fn">SKILL.md</span><p>режимы, ритм, verify-цикл из 9 шагов, параллельные этапы, финальный аудит, принципы</p></div>
+      <div class="file"><span class="fn">references/stage-prompt.md</span><p>шаблон stage-промпта: read-first, СТОПы, «что НЕ делать», «готово, когда»</p></div>
+      <div class="file"><span class="fn">references/review-workflow.md</span><p>метод ревью: форма finder→verifier, JSON-контракт, преамбула, меню измерений</p></div>
+      <div class="file"><span class="fn">references/review-runtime-claude.md</span><p>механика для Claude Code: скелет Workflow-скрипта, схемы, gotchas</p></div>
+      <div class="file"><span class="fn">references/review-runtime-codex.md</span><p>механика для Codex: последовательный путь с максимально доступной изоляцией</p></div>
+      <div class="file"><span class="fn">references/gate-playbook.md</span><p>как резолвить полный гейт в новом репо + его повторяющиеся failure modes</p></div>
+    </div>
+  </section>
+
+  <footer>ytil-skills · stage-orchestrator v1.7 · pull → делегируй → верифицируй → чини → приземляй → push ↻ → финальный аудит приёмки</footer>
+</div>

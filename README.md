@@ -43,6 +43,7 @@ skills/
       lib/
   stage-orchestrator/
     SKILL.md
+    process-map.html   # визуальная карта процесса (открыть в браузере)
     agents/
       openai.yaml
     references/
