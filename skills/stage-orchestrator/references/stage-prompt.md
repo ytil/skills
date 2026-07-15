@@ -6,8 +6,9 @@ and you pay for it in the verify loop. A good one is self-contained, orders the
 work so it stays green throughout, and tells the agent when to **stop and report**
 instead of guessing.
 
-Write it in the language the effort is being run in. It is a single
-self-contained markdown block.
+Write the prompt in the language the effort is run in; it is a single
+self-contained markdown block. The template below is an example in Russian —
+carry over its structure and invariants, not its language.
 
 ## Structure
 
@@ -36,7 +37,8 @@ target is — enough that the agent doesn't reinvent a decision already made>.
   finding, STOP and report>
 
 ## Верификация и отчёт
-<the full gate> зелёный; <per-app checks>; <build/export if relevant>.
+Готово, когда: <the full gate> зелёный; <per-app checks>; <build/export if
+relevant>.
 Отчёт: первой строкой абсолютный путь worktree и base commit; затем <what to
 report — per-entity map, deltas named, sanctioned deviations, STOPs hit,
 out-of-scope>.

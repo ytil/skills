@@ -15,8 +15,9 @@ the superset command — the one that runs typecheck, lint, tests, format check,
 and dead-code check together. If the repo has no such script, run the pieces CI
 runs, all of them; a subset gate produces exactly the "passing typecheck is not
 a passing format check" wound the verify loop warns about. Record what you
-resolved in this file (or the project memory) so the next stage doesn't
-re-derive it.
+resolved in the project's memory or its CLAUDE.md — not in this file, which is
+read-only when the skill is installed as a plugin (vendored in-repo copies may
+update it) — so the next stage doesn't re-derive it.
 
 ## Worked instance: pnpm monorepo (prettier / eslint / knip)
 
@@ -34,8 +35,9 @@ repo root. Its failure modes recur; know them so a red gate does not stall you:
 - **"Command qa not found"** — the shell is stuck in an `apps/<app>` dir after a
   per-app command; re-run from the repo root.
 - **Local green ≠ CI green** — a green local gate reflects the working tree;
-  CI runs only the pushed HEAD, so push a stack of commits together rather than
-  one known-red intermediate.
+  CI sees only the pushed HEAD. Never push a commit you know is red — the
+  loop's one-green-commit-per-stage plus an immediate push means a red
+  intermediate should never exist to begin with.
 
 ## The experiment beats the argument
 

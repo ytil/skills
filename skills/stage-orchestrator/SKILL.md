@@ -1,19 +1,17 @@
 ---
 name: stage-orchestrator
 description: >-
-  Orchestrate a multi-stage refactor or build by delegating each stage to an
-  external agent and verifying the returned work before committing. Use this
-  whenever you are acting as an orchestrator over delegated work: when you are
-  about to write a detailed stage/task prompt for another agent, when a report
-  comes back from a delegated stage and you need to verify it, when you receive
-  an external agent's summary of changes ("готово, сделал X") and must decide
-  whether to trust it, or when you are reviewing a large uncommitted diff
-  someone else produced before committing to main. Trigger even if the user
-  only says "проверь что сделано", "выдай промпт для этапа", "верифицируй",
-  "заказчик прислал отчёт", or names a stage number — the point is the
-  delegate → verify → fix → commit loop, not any single keyword. Do NOT use it
-  for ordinary review of a small diff you produced yourself — that is a plain
-  code review; this skill is for work coming back from a delegated agent.
+  Orchestrates a multi-stage refactor or build over delegated work: authors a
+  precise stage prompt for an external agent, then verifies the returned work —
+  full gate, adversarial review, machine-checked claims — before landing it on
+  main. Trigger whenever the session orchestrates delegated work: writing a
+  stage/task prompt for another agent, receiving a stage report or a delegate's
+  summary ("готово, сделал X"), reviewing a large uncommitted diff someone else
+  produced, or when the user says "проверь что сделано", "выдай промпт для
+  этапа", "верифицируй", "заказчик прислал отчёт", or names a stage number —
+  the point is the delegate → verify → fix → commit loop, not any single
+  keyword. Not for reviewing a small self-authored diff — that is plain code
+  review.
 ---
 
 # Stage orchestrator
@@ -92,7 +90,8 @@ because the report says green — the report is a claim, not evidence.
    *hallucinates*; its report says "0 refs" or "fully removed" when it is not.
    For every "removed / migrated / equivalent" claim, check it with a grep by
    **symbol name**, alias-aware, excluding tests where tests are not the point:
-   `grep -rn '<symbol>' src --include='*.ts' | grep -v '\.test\.'`. If the claim
+   `grep -rn '<symbol>' src --include='*.ts' | grep -v '\.test\.'` (adapt the
+   include pattern to the repo's language). If the claim
    is "SQL is 1:1", compile the query and diff the SQL — do not read it. If the
    claim is "schema mirrors X", dump both and diff them with a script. If the
    claim is "the new gate/rule is equivalent to the old one", do not settle for
@@ -113,7 +112,8 @@ because the report says green — the report is a claim, not evidence.
    prompt that states that decision. Patching a wrong approach costs more than
    re-running the stage and leaves `main` with a shape nobody chose.
 
-6. **Delegate the fixes to a subagent.** Hand the whole confirmed set — file,
+6. **Apply the confirmed fixes — via a subagent when the runtime has one.**
+   Hand the whole confirmed set — file,
    line, evidence, and the intended fix for each — to one fix subagent (Claude
    Code: the `Agent` tool) and let it apply the edits **inside the external
    agent's worktree**, the same tree the gate and review ran against. You stay
@@ -158,7 +158,7 @@ because the report says green — the report is a claim, not evidence.
 ## Parallel stages
 
 Running several stages at once — each in its own worktree off the same base —
-is fine, but **landings serialize**. Land one stage fully (steps 7–9), then the
+is fine, but **landings serialize**. Land one stage fully (steps 8–9), then the
 next. Two consequences:
 
 - After each landing, every other in-flight worktree's base is stale. Its gate
