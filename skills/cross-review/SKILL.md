@@ -44,15 +44,18 @@ Rules:
 
 - Role flags accept the FULL form only. To express "just effort", supply the model too (see defaults below).
 - effort: `minimal | low | medium | high | xhigh | max | ultracode` (`minimal` is Codex-only).
-- `ultracode` maps to the ultracode multi-agent keyword for Claude and to `model_reasoning_effort=ultra` for Codex. Codex `ultra` requires a GPT-5.6 model (use `gpt-5.6-sol`).
+- `ultracode` maps to the ultracode multi-agent keyword for Claude and to `model_reasoning_effort=ultra` for Codex. Codex `ultra` requires a GPT-5.6 model (`gpt-5.6-sol` or `gpt-5.6-terra`; `gpt-5.6-luna` does not support it).
 
 Model naming — concrete slugs only:
 
-- Always pass a CONCRETE model slug in role flags, never an alias: "sonnet"/"opus" are
-  ambiguous across releases. Resolve the user's alias to the current model id yourself
-  (your harness lists current Claude model ids; for Codex check `~/.codex/config.toml`
-  and the current lineup, e.g. `gpt-5.6-sol` / `gpt-5.6-terra` / `gpt-5.6-luna`) and show
+- A role flag, when you pass one, must carry a CONCRETE model slug, never an alias:
+  "sonnet"/"opus" are ambiguous across releases. Resolve the user's alias to the current
+  model id yourself (your harness lists current Claude model ids; for Codex check
+  `~/.codex/config.toml` and the current lineup, e.g. `gpt-5.6-sol` / `gpt-5.6-terra` /
+  `gpt-5.6-luna` — lineup examples age, trust the live sources over this file) and show
   the resolved slug in the approval gate — the user confirms it before launch.
+  Omitting a role flag entirely is also fine: the CLI's own default runs, and the gate
+  shows it as "CLI default".
 - When the user names only an effort, pick the model too: Claude — the current Opus slug
   (or Fable if the user asks for maximum quality); Codex — the `model` key from
   `~/.codex/config.toml` if set, otherwise `gpt-5.6-sol`.
@@ -77,6 +80,12 @@ Model naming — concrete slugs only:
 ## Guardrails
 
 - Read-only tasks only: if the user asks for code changes, this skill is the wrong tool — offer a regular implementation flow instead.
+- Read-only is enforced by the prompt, not by a sandbox: both agents run with full
+  permissions so that read-only commands and existing tests/linters work without
+  prompting. Hostile file contents could try to prompt-inject a mutating action —
+  do not point the pipeline at an untrusted repository.
 - Never launch without the approval gate, even when all parameters are explicit.
-- Do not add your own analysis on top of the verdict; the pipeline's value is the isolated three-model process.
+- Do not add your own analysis on top of the verdict; the pipeline's value is the
+  isolated five-call process — two analyses, two cross-reviews, one synthesis, none
+  sharing context.
 - The script scrubs `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` from its environment: both agents always run on subscription auth. Do not "fix" auth errors by injecting API keys.

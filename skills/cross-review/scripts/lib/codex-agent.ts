@@ -45,7 +45,10 @@ function codexConfiguredModel(): string | null {
 }
 
 export async function preflightCodex(): Promise<string | null> {
-    const res = spawnSync("codex", ["login", "status"], { encoding: "utf8" });
+    const res = spawnSync("codex", ["login", "status"], {
+        encoding: "utf8",
+        timeout: 10_000,
+    });
     if (res.error) {
         return "codex CLI not found. Install it and log in with a ChatGPT subscription: npm i -g @openai/codex && codex login";
     }

@@ -39,10 +39,24 @@ export function resolveSynthesizer(config: CliConfig): SynthesizerSpec {
 }
 
 // --- Retry wrapper: one retry with backoff, transient failures only.
+// A second identical attempt cannot fix a per-call timeout (it would just burn
+// the same timeout again) or a quota/auth error (self-describing, and a retry
+// spends another subscription call) — those fail fast.
+function isRetryable(err: unknown): boolean {
+    const message = (
+        err instanceof Error ? err.message : String(err)
+    ).toLowerCase();
+    if (message.includes("timed out after")) return false;
+    return !/usage limit|rate limit|quota|resets? at|not logged in|unauthorized|forbidden/.test(
+        message,
+    );
+}
+
 async function withRetry<T>(label: string, fn: () => Promise<T>): Promise<T> {
     try {
         return await fn();
     } catch (err) {
+        if (!isRetryable(err)) throw err;
         const message = err instanceof Error ? err.message : String(err);
         log(`${label} failed (${message}); retrying once in 5s ...`);
         await new Promise((r) => setTimeout(r, 5000));
@@ -84,6 +98,7 @@ export async function runPipeline(config: CliConfig): Promise<void> {
     if (!fs.existsSync(config.cwd))
         fail(`--cwd does not exist: ${config.cwd}`, 1);
 
+    const startedAt = new Date();
     const synthesizer = resolveSynthesizer(config);
 
     // Side-specific effort validation (the shared vocabulary is checked by commander).
@@ -138,6 +153,7 @@ export async function runPipeline(config: CliConfig): Promise<void> {
             artifacts,
             timings,
             failures,
+            totalMs: Date.now() - startedAt.getTime(),
         });
         const meta = {
             task: config.task,
@@ -149,6 +165,7 @@ export async function runPipeline(config: CliConfig): Promise<void> {
             timeoutMin: config.timeoutMin,
             timings,
             failures,
+            startedAt: startedAt.toISOString(),
             finishedAt: new Date().toISOString(),
         };
         return writeReport(reportDir, { report, meta });

@@ -30,7 +30,8 @@ function fmtDuration(ms: number | null): string {
 }
 
 function fmtRole(role: RoleLike | null): string {
-    if (!role) return "CLI defaults";
+    if (!role || (role.model === null && role.effort === null))
+        return "CLI defaults";
     const model = role.model ?? "CLI default";
     const effort = role.effort ?? "CLI default";
     return `${model} : ${effort}`;
@@ -44,6 +45,7 @@ export interface ReportInput {
     artifacts: Artifacts;
     timings: Timings;
     failures: StageFailure[];
+    totalMs: number;
 }
 
 export function buildReport({
@@ -54,6 +56,7 @@ export function buildReport({
     artifacts,
     timings,
     failures,
+    totalMs,
 }: ReportInput): string {
     const lines = [
         "# Cross-review report",
@@ -76,6 +79,7 @@ export function buildReport({
         )}, review of A ${fmtDuration(timings.reviewOfA)}, review of B ${fmtDuration(
             timings.reviewOfB,
         )}, synthesis ${fmtDuration(timings.verdict)}`,
+        `- total wall-clock: ${fmtDuration(totalMs)}`,
         "",
     ];
 

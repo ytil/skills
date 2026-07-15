@@ -131,7 +131,8 @@ const program = new Command()
         `
 Effort values: ${EFFORT_VALUES.join(" | ")}
   "minimal" is Codex-only. "ultracode" maps to the ultracode multi-agent keyword
-  for Claude and to model_reasoning_effort=ultra for Codex (GPT-5.6 sol/terra).
+  for Claude and to model_reasoning_effort=ultra for Codex (GPT-5.6 sol/terra;
+  luna does not support it).
 
 Examples:
   cross-review "why does test X flake on CI?"

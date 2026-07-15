@@ -1,7 +1,7 @@
 {
     "name": "cross-review-orchestrator",
     "private": true,
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "Cross-review orchestrator: run a read-only task in Claude and Codex, cross-review results, synthesize a verdict. Subscription-based auth only.",
     "type": "module",
     "engines": {

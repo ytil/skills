@@ -24,7 +24,13 @@ export function validateClaudeEffort(
 }
 
 export async function preflightClaude(): Promise<string | null> {
-    const res = spawnSync("claude", ["--version"], { encoding: "utf8" });
+    // Version check only — the claude CLI has no cheap auth-status command, so
+    // a logged-out claude surfaces in wave 1, not here. Accepted asymmetry with
+    // the codex preflight, which does verify login.
+    const res = spawnSync("claude", ["--version"], {
+        encoding: "utf8",
+        timeout: 10_000,
+    });
     if (res.error || res.status !== 0) {
         return (
             "claude CLI not found or not working. Install Claude Code and log in with a " +
