@@ -10,9 +10,11 @@
 // The approach below strips tags, then drops a line whenever it equals the previous
 // emitted line, which collapses the rolling repeats into a clean, timecoded transcript.
 
-import { spawnSync } from "node:child_process";
+import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+
+export const MAX_BUFFER = 128 * 1024 * 1024;
 
 // Absolute path to the skill's setup/restore script, so dependency-missing errors can
 // point the user at the exact command to fix them. All scripts live in this same dir.
@@ -35,6 +37,46 @@ export function requireCommand(cmd: string, brewPkg?: string): void {
     process.exit(1);
 }
 
+// yt-dlp/network failures worth retrying: YouTube rate-limits subtitle downloads
+// aggressively (429), and transient 5xx / connection drops happen on big playlists.
+const TRANSIENT_RE =
+    /HTTP Error 429|Too Many Requests|HTTP Error 5\d\d|urlopen error|timed out|Temporary failure|Connection (reset|refused)/i;
+
+function sleepSync(ms: number): void {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+// spawnSync wrapper with a hard timeout — a hung yt-dlp/ffmpeg (stalled network read)
+// otherwise blocks the script forever — and optional retries with linear backoff when
+// the failure looks transient (rate limit, 5xx, drop, or the timeout itself).
+export function runCmd(
+    cmd: string,
+    args: string[],
+    opts: { timeoutMs: number; retries?: number; retryDelayMs?: number },
+): SpawnSyncReturns<string> {
+    const retries = opts.retries ?? 0;
+    for (let attempt = 0; ; attempt++) {
+        const r = spawnSync(cmd, args, {
+            encoding: "utf-8",
+            maxBuffer: MAX_BUFFER,
+            timeout: opts.timeoutMs,
+        });
+        const failed = r.status !== 0 || r.error !== undefined;
+        const timedOut =
+            (r.error as NodeJS.ErrnoException | undefined)?.code === "ETIMEDOUT";
+        const transient =
+            timedOut ||
+            TRANSIENT_RE.test(`${r.stderr ?? ""} ${r.error?.message ?? ""}`);
+        if (!failed || !transient || attempt >= retries) return r;
+        const delay = (opts.retryDelayMs ?? 10_000) * (attempt + 1);
+        console.error(
+            `  … ${cmd} hit a transient failure (${timedOut ? "timeout" : "rate limit / network"}), ` +
+                `retry ${attempt + 1}/${retries} in ${Math.round(delay / 1000)}s`,
+        );
+        sleepSync(delay);
+    }
+}
+
 const CUE_RE = /(\d\d:\d\d:\d\d\.\d\d\d)\s*-->\s*(\d\d:\d\d:\d\d\.\d\d\d)/;
 const TAG_RE = /<[^>]+>/g;
 const SKIP_PREFIXES = ["WEBVTT", "Kind:", "Language:", "NOTE"];
@@ -53,6 +95,7 @@ export interface YtMeta {
     uploader?: string;
     webpage_url?: string;
     duration?: number;
+    language?: string;
     subtitles?: Record<string, unknown>;
     automatic_captions?: Record<string, unknown>;
 }
@@ -187,15 +230,19 @@ export function formatTranscript(
 // Choose the best subtitle track. Returns { lang, kind } (kind is 'manual' | 'auto').
 //
 // Priority: a manual track beats an auto one; within each, the caller's preferred
-// language wins, then English, then Russian, then whatever exists. Claude translates to
-// Russian afterwards, so the source language only needs to be *some* language we actually
-// have — English covers the overwhelming majority of tutorial content.
+// language wins, then the video's ORIGINAL language, then English, then Russian, then
+// whatever exists. The original-language step matters because YouTube's auto-caption
+// table lists dozens of machine-TRANSLATED tracks: for a Russian video it offers both
+// "ru" (original) and "en" (machine translation of it), and blindly preferring English
+// would pick the doubly-degraded translation. Claude translates to Russian afterwards,
+// so the source only needs to be faithful, not English.
 export function pickSubtitle(
     meta: YtMeta,
     preferredLang?: string | null,
 ): { lang: string | null; kind: SubtitleKind | null } {
     const manual = meta.subtitles ?? {};
     const auto = meta.automatic_captions ?? {};
+    const orig = meta.language ? (meta.language.split("-")[0] as string) : null;
 
     const cleanLangs = (d: Record<string, unknown>): string[] =>
         Object.keys(d).filter((k) => k && k !== "live_chat");
@@ -207,8 +254,15 @@ export function pickSubtitle(
     for (const [kind, table] of tables) {
         const langs = cleanLangs(table);
         if (langs.length === 0) continue;
-        for (const want of [preferredLang, "en", "en-US", "en-orig", "ru"]) {
+        for (const want of [preferredLang, orig && `${orig}-orig`, orig]) {
             if (!want) continue;
+            if (langs.includes(want)) return { lang: want, kind };
+        }
+        // The `xx-orig` auto track is the untranslated original even when meta.language
+        // is absent — prefer it over any machine-translated track.
+        const origTrack = langs.find((l) => l.toLowerCase().endsWith("-orig"));
+        if (origTrack) return { lang: origTrack, kind };
+        for (const want of ["en", "en-US", "ru"]) {
             if (langs.includes(want)) return { lang: want, kind };
         }
         // Prefer an English variant if any (e.g. 'en-GB'), else first available.

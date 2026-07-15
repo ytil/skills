@@ -45,7 +45,7 @@ function extract(
             "1",
             out,
         ],
-        { encoding: "utf-8" },
+        { encoding: "utf-8", timeout: 60_000 },
     );
     return existsSync(out) ? out : null;
 }

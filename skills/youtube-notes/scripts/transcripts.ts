@@ -2,17 +2,17 @@
 // Batch-download and clean transcripts for many videos — subtitles only, no video.
 //
 // Usage:
-//     node transcripts.ts <workdir> <url1> <url2> ...
+//     node transcripts.ts <workdir> <url1> <url2> ... [--lang XX]
 //
 // For each URL: fetch metadata, pick the best subtitle track, download it, clean it into a
 // timecoded transcript, and write <workdir>/<id>.txt with a small header. Writes an
 // index.json summarizing every video (including failures) so a caller can see at a glance
-// what succeeded and what has no captions.
+// what succeeded and what has no captions. A failed download is status "error" (with the
+// yt-dlp message), NOT "no_subtitles" — the two need different handling upstream.
 //
 // This is the lightweight path used when you need the words but not the visuals — e.g.
 // synthesizing key ideas across a playlist into one document.
 
-import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -21,11 +21,10 @@ import {
     parseVtt,
     pickSubtitle,
     requireCommand,
+    runCmd,
     secToStamp,
     type YtMeta,
 } from "./lib.ts";
-
-const MAX_BUFFER = 128 * 1024 * 1024;
 
 interface Entry {
     id?: string;
@@ -40,14 +39,18 @@ interface Entry {
     blocks?: number;
 }
 
-function run(cmd: string, args: string[]): SpawnSyncReturns<string> {
-    return spawnSync(cmd, args, { encoding: "utf-8", maxBuffer: MAX_BUFFER });
-}
-
-function process_(url: string, workdir: string): Entry {
-    const r = run("yt-dlp", ["--dump-single-json", "--skip-download", url]);
+function process_(
+    url: string,
+    workdir: string,
+    preferredLang: string | null,
+): Entry {
+    const r = runCmd("yt-dlp", ["--dump-single-json", "--skip-download", url], {
+        timeoutMs: 120_000,
+        retries: 2,
+    });
     if (r.status !== 0) {
-        return { url, status: "error", error: r.stderr.trim().slice(-200) };
+        const msg = (r.error?.message ?? "") + (r.stderr ?? "").trim();
+        return { url, status: "error", error: msg.slice(-200) };
     }
     const meta = JSON.parse(r.stdout) as YtMeta;
     const vid = meta.id ?? "unknown";
@@ -60,7 +63,7 @@ function process_(url: string, workdir: string): Entry {
         status: "no_subtitles",
     };
 
-    const { lang, kind } = pickSubtitle(meta);
+    const { lang, kind } = pickSubtitle(meta, preferredLang);
     if (!lang || !kind) {
         entry.status = "no_subtitles";
         return entry;
@@ -68,22 +71,34 @@ function process_(url: string, workdir: string): Entry {
 
     const flag = kind === "manual" ? "--write-subs" : "--write-auto-subs";
     const out = join(workdir, `${vid}.%(ext)s`);
-    run("yt-dlp", [
-        "--skip-download",
-        flag,
-        "--sub-langs",
-        lang,
-        "--sub-format",
-        "vtt/best",
-        "-o",
-        out,
-        url,
-    ]);
+    const dl = runCmd(
+        "yt-dlp",
+        [
+            "--skip-download",
+            flag,
+            "--sub-langs",
+            lang,
+            "--sub-format",
+            "vtt/best",
+            "-o",
+            out,
+            url,
+        ],
+        { timeoutMs: 300_000, retries: 2 },
+    );
     const vtts = readdirSync(workdir).filter(
         (f) => f.startsWith(`${vid}.`) && f.endsWith(".vtt"),
     );
     if (vtts.length === 0) {
-        entry.status = "no_subtitles";
+        // A track was advertised in the metadata: no file + a failed run is a download
+        // error (transient, retryable), not a missing-captions video.
+        if (dl.status !== 0 || dl.error) {
+            entry.status = "error";
+            const msg = (dl.error?.message ?? "") + (dl.stderr ?? "").trim();
+            entry.error = "subtitle download failed: " + msg.slice(-200);
+        } else {
+            entry.status = "no_subtitles";
+        }
         return entry;
     }
 
@@ -110,8 +125,14 @@ function process_(url: string, workdir: string): Entry {
 
 function main(): void {
     const argv = process.argv.slice(2);
+    let preferredLang: string | null = null;
+    const li = argv.indexOf("--lang");
+    if (li !== -1) {
+        preferredLang = argv[li + 1] ?? null;
+        argv.splice(li, 2);
+    }
     if (argv.length < 2) {
-        console.error("usage: transcripts.ts <workdir> <url>...");
+        console.error("usage: transcripts.ts <workdir> <url>... [--lang XX]");
         process.exit(1);
     }
     requireCommand("yt-dlp", "yt-dlp");
@@ -121,14 +142,14 @@ function main(): void {
 
     const index: Entry[] = [];
     urls.forEach((url, i) => {
-        const entry = process_(url, workdir);
+        const entry = process_(url, workdir, preferredLang);
         index.push(entry);
         const title = (entry.title || url).slice(0, 60);
         const mark = entry.status === "ok" ? "✓" : "✗";
         const extra =
             entry.status === "ok"
                 ? `${entry.blocks ?? 0} blocks`
-                : entry.status;
+                : (entry.error ?? entry.status).slice(0, 100);
         console.error(`[${i + 1}/${urls.length}] ${mark} ${title} — ${extra}`);
     });
 

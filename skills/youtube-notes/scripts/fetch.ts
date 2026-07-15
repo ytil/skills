@@ -18,8 +18,7 @@
 //     share content every new slide is a scene change, so these timecodes land on keepable
 //     frames. The skill still visually filters them (many scenes are just the talking head).
 
-import { spawnSync, type SpawnSyncReturns } from "node:child_process";
-import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -27,57 +26,73 @@ import {
     parseVtt,
     pickSubtitle,
     requireCommand,
+    runCmd,
     secToStamp,
     type SubtitleKind,
     type YtMeta,
 } from "./lib.ts";
-
-const MAX_BUFFER = 128 * 1024 * 1024;
 
 function die(msg: string, code = 1): never {
     console.error(`ERROR: ${msg}`);
     process.exit(code);
 }
 
-function run(cmd: string, args: string[]): SpawnSyncReturns<string> {
-    return spawnSync(cmd, args, { encoding: "utf-8", maxBuffer: MAX_BUFFER });
-}
-
+// Distinguishes "the track exists but the download failed" (error set — transient
+// network / rate limit, worth re-running) from "yt-dlp succeeded yet produced no file"
+// (both null — genuinely nothing usable). Conflating the two used to report a network
+// hiccup as "video has no captions".
 function downloadSubtitle(
     url: string,
     workdir: string,
     lang: string,
     kind: SubtitleKind,
-): string | null {
+): { path: string | null; error: string | null } {
     const flag = kind === "manual" ? "--write-subs" : "--write-auto-subs";
     const out = join(workdir, "sub.%(ext)s");
-    run("yt-dlp", [
-        "--skip-download",
-        flag,
-        "--sub-langs",
-        lang,
-        "--sub-format",
-        "vtt/best",
-        "-o",
-        out,
-        url,
-    ]);
-    // yt-dlp names it sub.<lang>.vtt; find whatever landed.
+    const r = runCmd(
+        "yt-dlp",
+        [
+            "--skip-download",
+            flag,
+            "--sub-langs",
+            lang,
+            "--sub-format",
+            "vtt/best",
+            "-o",
+            out,
+            url,
+        ],
+        { timeoutMs: 300_000, retries: 2 },
+    );
+    // yt-dlp names it sub.<lang>.vtt; prefer the exact language, else whatever landed.
     const vtts = readdirSync(workdir).filter(
         (f) => f.startsWith("sub.") && f.endsWith(".vtt"),
     );
-    return vtts.length ? join(workdir, vtts[0] as string) : null;
+    const name = vtts.find((f) => f === `sub.${lang}.vtt`) ?? vtts[0];
+    if (name) return { path: join(workdir, name), error: null };
+    if (r.status === 0 && !r.error) return { path: null, error: null };
+    return {
+        path: null,
+        error: (r.error?.message ?? "") + (r.stderr ?? "").slice(-800),
+    };
 }
 
 function downloadVideo(url: string, workdir: string): string {
     const out = join(workdir, "video.%(ext)s");
     const fmt = "bv*[height<=480]/b[height<=480]/wv*/w";
-    const r = run("yt-dlp", ["-f", fmt, "-o", out, url]);
+    const r = runCmd("yt-dlp", ["-f", fmt, "-o", out, url], {
+        timeoutMs: 1_800_000,
+        retries: 1,
+    });
     const vids = readdirSync(workdir).filter(
         (f) => f.startsWith("video.") && !f.endsWith(".part"),
     );
     if (vids.length === 0) {
-        die("video download failed:\n" + r.stderr.slice(-800));
+        die(
+            "video download failed:\n" +
+                (r.error ? r.error.message + "\n" : "") +
+                (r.stderr ?? "").slice(-800),
+        );
     }
     return join(workdir, vids[0] as string);
 }
@@ -87,15 +102,19 @@ function detectScenes(
     workdir: string,
     threshold = 0.4,
 ): { scenesPath: string; count: number } {
-    const r = run("ffmpeg", [
-        "-i",
-        videoPath,
-        "-filter:v",
-        `select='gt(scene,${threshold})',showinfo`,
-        "-f",
-        "null",
-        "-",
-    ]);
+    const r = runCmd(
+        "ffmpeg",
+        [
+            "-i",
+            videoPath,
+            "-filter:v",
+            `select='gt(scene,${threshold})',showinfo`,
+            "-f",
+            "null",
+            "-",
+        ],
+        { timeoutMs: 1_800_000 },
+    );
     const times = [...r.stderr.matchAll(/pts_time:([0-9.]+)/g)]
         .map((m) => Number(m[1]))
         .sort((a, b) => a - b);
@@ -127,18 +146,55 @@ function main(): void {
     mkdirSync(workdir, { recursive: true });
 
     console.error("→ Fetching metadata...");
-    const meta = run("yt-dlp", ["--dump-single-json", "--skip-download", url]);
+    const meta = runCmd("yt-dlp", ["--dump-single-json", "--skip-download", url], {
+        timeoutMs: 120_000,
+        retries: 2,
+    });
     if (meta.status !== 0) {
-        die("could not fetch video metadata:\n" + meta.stderr.slice(-800));
+        die(
+            "could not fetch video metadata:\n" +
+                (meta.error ? meta.error.message + "\n" : "") +
+                (meta.stderr ?? "").slice(-800),
+        );
     }
     const info = JSON.parse(meta.stdout) as YtMeta;
+
+    // Refuse a workdir that already holds another video's files — the downloads below
+    // find their outputs by filename pattern, so stale video.*/sub.*.vtt from a previous
+    // run would be silently picked up as this video's.
+    if (info.id) {
+        const idPath = join(workdir, "video.id");
+        if (existsSync(idPath)) {
+            const prev = readFileSync(idPath, "utf-8").trim();
+            if (prev && prev !== info.id) {
+                die(
+                    `workdir ${workdir} holds files for another video (${prev}); ` +
+                        "use a fresh workdir for this one",
+                );
+            }
+        }
+        writeFileSync(idPath, info.id + "\n");
+    }
 
     const { lang, kind } = pickSubtitle(info, preferredLang);
     let transcriptPath: string | null = null;
     let nBlocks = 0;
     if (lang && kind) {
         console.error(`→ Downloading ${kind} subtitles (${lang})...`);
-        const vtt = downloadSubtitle(url, workdir, lang, kind);
+        const { path: vtt, error: subError } = downloadSubtitle(
+            url,
+            workdir,
+            lang,
+            kind,
+        );
+        if (subError) {
+            die(
+                `subtitle download failed (a ${lang} track exists but couldn't be fetched):\n` +
+                    subError +
+                    "\nThis is transient (rate limit / network) — re-run the same command, " +
+                    "NOT a missing-captions case.",
+            );
+        }
         if (vtt) {
             const transcript = formatTranscript(parseVtt(vtt));
             transcriptPath = join(workdir, "transcript.txt");

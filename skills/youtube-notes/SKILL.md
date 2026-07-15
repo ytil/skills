@@ -99,6 +99,12 @@ If the summary says **"Transcript: NONE FOUND"**, the video has no usable subtit
 Tell the user (in Russian) that this video has no captions to work from and ask whether
 they want to pick a different video — don't try to fabricate content from the visuals alone.
 
+Distinguish that from **"ERROR: subtitle download failed"** — a track exists but fetching
+it hit a rate limit / network problem even after the built-in retries. That's transient:
+re-run the same command (downloads resume), and never report it to the user as "no captions".
+Also note `fetch.ts` refuses a workdir that holds a different video's files — on that error,
+pick a fresh workdir instead of forcing it.
+
 ### 2. Distill into Russian key ideas
 
 Read the whole transcript first, then write the `# Core ideas` list. This is the heart
@@ -108,7 +114,10 @@ of the note and where your judgment matters most:
   frameworks a viewer would want to remember. Skip greetings, sponsor plugs, and
   "smash subscribe".
 - **Translate into natural Russian**, not word-for-word. Convey the idea the way the
-  user would jot it down for themselves.
+  user would jot it down for themselves. Watch for calques and anglicism jargon — the
+  telltale sign of machine-flavored notes («реверс-инжинирит», «спека», «таргетируешь»,
+  «шерабельный»): use the normal Russian word instead («разбирает», «спецификация»,
+  «нацеливаешься», «которым хочется поделиться»). Product/brand names stay as-is.
 - Group related detail as nested sub-bullets (tab-indented) where it clarifies a point,
   like the rules list in the reference note.
 - Keep the transcript's timecodes in mind — you'll need them next to find screenshots.
@@ -212,10 +221,11 @@ matters for trust.
 
 ## Notes & edge cases
 
-- **Language.** `fetch.ts` prefers manual subtitles, then auto-captions, preferring English
-  then Russian then whatever exists. If the video is Russian, you're distilling (not
-  translating). If it's another language with no English track, you still translate the
-  available track into Russian.
+- **Language.** `fetch.ts` prefers manual subtitles, then auto-captions; within each it
+  picks the video's **original language** first (YouTube's auto-caption list is mostly
+  machine-translated tracks — the original beats a translation), then English, then Russian,
+  then whatever exists. If the video is Russian, you're distilling (not translating). If
+  it's another language, you translate the available track into Russian.
 - **Long videos (>30 min).** The transcript and scene list get bigger but the flow is the
   same; just be more aggressive about distilling and about which visuals earn a screenshot.
 - **Timecode drift.** Auto-caption timecodes and scene cuts can be a second or two off from
@@ -240,9 +250,11 @@ Run each as `node <skill>/scripts/<name>.ts ...`. They shell out to `yt-dlp` and
   grids for surveying visuals; prints a tile→timecode map. Accepts `--times t1 t2 ...` instead.
 - `scripts/frames.ts <video> <outdir> <sec> [<sec> ...] [--offset 0.0]` — full-res frames at
   given timecodes, named by timecode. `--offset` shifts grabs past a scene cut.
-- `scripts/transcripts.ts <workdir> <url1> <url2> ...` — batch, subtitles-only download for
-  many videos → `<id>.txt` + `index.json`. The lightweight path for synthesizing ideas
-  across a playlist without downloading any video. Used by the свод workflow.
+- `scripts/transcripts.ts <workdir> <url1> <url2> ... [--lang XX]` — batch, subtitles-only
+  download for many videos → `<id>.txt` + `index.json`. The lightweight path for synthesizing
+  ideas across a playlist without downloading any video. Used by the свод workflow. In
+  `index.json`, `no_subtitles` means the video really has no captions; `error` with a
+  "subtitle download failed" message is transient — re-run those URLs.
 - `scripts/cite_timecodes.ts plan|apply <note.md> <transcripts_dir> <workdir> [--per-bin 18]` —
   turn the `[N]` footnotes in a свод into clickable links that deep-link to the source video's
   timecode. `plan` writes matcher-agent task files; `apply` validates the agents' matches

@@ -153,7 +153,7 @@ async function main(): Promise<void> {
                 "4",
                 src,
             ],
-            { encoding: "utf-8" },
+            { encoding: "utf-8", timeout: 60_000 },
         );
         // Fail loudly if a frame didn't get written — otherwise the next step (jimp) throws
         // an opaque "could not load buffer" and hides the real cause (e.g. a bad timecode).
@@ -205,7 +205,7 @@ async function main(): Promise<void> {
                 "3",
                 sheetPath,
             ],
-            { encoding: "utf-8" },
+            { encoding: "utf-8", timeout: 120_000 },
         );
         const tiles: Tile[] = chunk.map((t, i) => ({
             pos: i + 1,
