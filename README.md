@@ -48,6 +48,8 @@ skills/
     references/
       gate-playbook.md
       review-workflow.md
+      review-runtime-claude.md
+      review-runtime-codex.md
       stage-prompt.md
   youtube-notes/
     SKILL.md

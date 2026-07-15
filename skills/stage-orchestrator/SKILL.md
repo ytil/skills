@@ -62,7 +62,10 @@ because the report says green — the report is a claim, not evidence.
    accident. The full gate is whatever this repo defines as its complete check —
    a `qa`/`check` script covering typecheck, lint, tests, format, dead code; see
    `references/gate-playbook.md` for how to resolve it and for its recurring
-   failure modes. Launch it with `run_in_background` so the review overlaps it.
+   failure modes. If the runtime can run commands in the background (Claude
+   Code: `run_in_background`), start the gate now so the review overlaps it; a
+   runtime that only runs commands synchronously (Codex) runs the gate first
+   and reads the result before starting the review.
 
 2. **Inventory the diff.** `git status --short | wc -l`, `git diff --stat | tail`.
    You need the scale (10 files vs 200) to calibrate how deep to review and
@@ -70,15 +73,19 @@ because the report says green — the report is a claim, not evidence.
    does not show them, and a stage that *adds* files hides its most important
    changes there.
 
-3. **Launch an adversarial review** over the diff — a `Workflow` with one finder
-   per independent dimension, each finding then attacked by a separate verifier
-   that tries to *refute* it. The finder/verify pipeline and schemas live in
-   `references/review-workflow.md`; copy that skeleton and fill in the
-   dimensions for this stage. Pick dimensions from what the stage actually
-   touched: behavioral equivalence of the thing that changed, residue/dead-code,
-   test-integrity, contract/schema fidelity, money-path (auth, purchases,
-   migrations, data sync). Scale the finder count and vote count to the diff
-   size and the user's thoroughness signal.
+3. **Launch an adversarial review** over the diff — one finder per independent
+   dimension, each finding then attacked by a separate verifier that tries to
+   *refute* it. The method — the shape, the data contract, the shared prompt
+   preamble, the dimension menu — lives in `references/review-workflow.md`.
+   The execution mechanics are per-runtime; read only the file for yours:
+   `references/review-runtime-claude.md` (Claude Code — parallel isolated
+   agents via a `Workflow` script) or `references/review-runtime-codex.md`
+   (Codex and other single-context runtimes — the sequential degradation
+   path). Pick dimensions from what the stage actually touched: behavioral
+   equivalence of the thing that changed, residue/dead-code, test-integrity,
+   contract/schema fidelity, money-path (auth, purchases, migrations, data
+   sync). Scale the finder count and vote count to the diff size and the
+   user's thoroughness signal.
 
 4. **Machine-verify the load-bearing claims yourself, in parallel** — do not
    outsource this entirely to the review agents. The external agent's recon
@@ -107,12 +114,15 @@ because the report says green — the report is a claim, not evidence.
    re-running the stage and leaves `main` with a shape nobody chose.
 
 6. **Delegate the fixes to a subagent.** Hand the whole confirmed set — file,
-   line, evidence, and the intended fix for each — to one fix subagent (the
-   `Agent` tool) and let it apply the edits **inside the external agent's
-   worktree**, the same tree the gate and review ran against. You stay the
-   reviewer and committer; keeping the mechanical editing out of your own thread
-   preserves your context for judgment and mirrors the delegate → verify split
-   the whole loop runs on. Fix *everything* confirmed, minors included —
+   line, evidence, and the intended fix for each — to one fix subagent (Claude
+   Code: the `Agent` tool) and let it apply the edits **inside the external
+   agent's worktree**, the same tree the gate and review ran against. You stay
+   the reviewer and committer; keeping the mechanical editing out of your own
+   thread preserves your context for judgment and mirrors the delegate → verify
+   split the whole loop runs on. A runtime without subagents (Codex) applies
+   the fixes itself — freeze the confirmed set first and work through it
+   mechanically, without re-litigating findings mid-edit: the set was already
+   adversarially confirmed. Fix *everything* confirmed, minors included —
    deferring a real minor just reopens it a stage later. (A lone trivial edit —
    one stale doc line — you may do inline rather than spawn an agent for it.)
 

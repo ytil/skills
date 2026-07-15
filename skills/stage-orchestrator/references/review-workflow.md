@@ -1,115 +1,94 @@
-# Adversarial review workflow
+# Adversarial review — the method
 
-The verify step (step 3 of the loop) uses a `Workflow` script: one **finder** per
-independent dimension of the diff, and *every* finding is then attacked by an
-independent **verifier** whose job is to *refute* it. Pipeline, not barrier — a
-dimension's findings verify as soon as that dimension's finder returns, so fast
-dimensions don't wait on slow ones.
+This file is the runtime-neutral half of the review step (step 3 of the verify
+loop): the shape, the data contract, the shared prompt preamble, and the
+dimension menu. The execution mechanics live in per-runtime files — read only
+the one for the runtime you are running in:
 
-Copy the skeleton below and fill in `DIMENSIONS` for the stage under review. Keep
-the `COMMON` preamble factual and specific: what the stage claims, what the base
-commit is, what is *sanctioned* (so verifiers don't flag deliberate decisions),
-and the instruction to read real code and return structured findings only.
+- **Claude Code** → `review-runtime-claude.md` — parallel, isolated agents via
+  a `Workflow` script. The full-strength form of the method.
+- **Codex and other single-context runtimes** → `review-runtime-codex.md` —
+  the sequential degradation path that preserves as much independence as the
+  runtime allows.
+
+## The shape
+
+One **finder** per independent dimension of the diff; *every* finding — minors
+included — is then attacked by an independent **verifier** whose job is to
+*refute* it. Findings of one dimension verify as soon as that dimension's
+finder is done; nothing waits for the slowest dimension.
 
 ## Why this shape
 
 - **One finder per dimension** — dimensions are blind to each other, so each
-  surfaces what a single reviewer would miss. Pick dimensions from what the stage
-  touched, not a fixed list.
+  surfaces what a single reviewer would miss. Pick dimensions from what the
+  stage touched, not a fixed list.
 - **Adversarial verify per finding — minors included.** A plausible finding is
   not a real one, at any severity: an unverified minor handed straight to the
-  fix subagent is exactly the plausible-but-wrong "fix" the loop exists to
-  prevent, and a single verifier vote per minor is cheap. The verifier tries to
-  refute using compensating code, a misread diff, or a sanctioned decision, and
-  may also **re-grade severity** (`adjustedSeverity`) when a finding is real but
+  fixer is exactly the plausible-but-wrong "fix" the loop exists to prevent,
+  and a single verifier vote per minor is cheap. The verifier tries to refute
+  using compensating code, a misread diff, or a sanctioned decision, and may
+  also **re-grade severity** (`adjustedSeverity`) when a finding is real but
   over- or under-stated. Real defects survive; the rest get dropped or
   downgraded.
-- **`COMMON` names the sanctioned decisions** — otherwise verifiers waste votes
-  re-flagging things the stage deliberately did (a legacy shape kept at a VM
-  boundary, a dependency deferred to a later stage).
-- **You still machine-check on top** — the workflow is a wide net, not a
+- **The preamble names the sanctioned decisions** — otherwise verifiers waste
+  effort re-flagging things the stage deliberately did (a legacy shape kept at
+  a VM boundary, a dependency deferred to a later stage).
+- **You still machine-check on top** — the review is a wide net, not a
   substitute for grepping the load-bearing claims yourself (see the skill's
   second principle).
 
-## Skeleton
+## Data contract
 
-```javascript
-export const meta = {
-    name: 'verify-<stage>',
-    description: 'Адверсариальная верификация <stage> (<one line>)',
-    phases: [{ title: 'Review' }, { title: 'Verify' }],
+Both runtimes exchange the same JSON shapes. A finder returns:
+
+```json
+{
+  "summary": "one paragraph",
+  "findings": [
+    {
+      "file": "path",
+      "line": 42,
+      "severity": "blocker | major | minor",
+      "title": "one sentence",
+      "evidence": "concrete code/diff lines"
+    }
+  ]
 }
-
-const FINDINGS_SCHEMA = {
-    type: 'object',
-    required: ['findings', 'summary'],
-    properties: {
-        summary: { type: 'string' },
-        findings: {
-            type: 'array',
-            items: {
-                type: 'object',
-                required: ['file', 'severity', 'title', 'evidence'],
-                properties: {
-                    file: { type: 'string' },
-                    line: { type: 'number' },
-                    severity: { type: 'string', enum: ['blocker', 'major', 'minor'] },
-                    title: { type: 'string' },
-                    evidence: { type: 'string' }, // concrete code/diff lines
-                },
-            },
-        },
-    },
-}
-
-const VERDICT_SCHEMA = {
-    type: 'object',
-    required: ['isReal', 'reasoning'],
-    properties: {
-        isReal: { type: 'boolean' },
-        reasoning: { type: 'string' },
-        // set only when the finding is real but its severity is mis-graded
-        adjustedSeverity: { type: 'string', enum: ['blocker', 'major', 'minor'] },
-    },
-}
-
-// Factual context every agent shares. Name the base commit, the claim, and — critically —
-// what is SANCTIONED so verifiers don't re-flag deliberate decisions. Tell them the full
-// gate is running separately in parallel (don't run it), to read REAL code/diffs, and that
-// an empty findings list is a valid result (don't invent problems for volume).
-const COMMON = `Репозиторий <path>, working tree = НЕЗАКОММИЧЕННЫЙ <stage> (<N файлов, +X/−Y>, base=<hash>). <что заявлено>. Санкционировано: <решения этапа, не флагать>. Ты ревьюер-верификатор. Смотри РЕАЛЬНЫЙ код (git diff HEAD, git show HEAD:<path>). Полный гейт запущен отдельно и идёт параллельно — НЕ запускай его сам. Пустой список находок валиден.`
-
-const DIMENSIONS = [
-    { key: '<dimension>', prompt: `${COMMON}\nИзмерение: <what to inspect, numbered checks, what counts as a finding vs sanctioned>` },
-    // ...one per independent dimension
-]
-
-phase('Review')
-const results = await pipeline(
-    DIMENSIONS,
-    (d) => agent(d.prompt, { label: `review:${d.key}`, phase: 'Review', schema: FINDINGS_SCHEMA }),
-    async (review, d) => {
-        if (!review) return null
-        if (!review.findings.length) return { key: d.key, summary: review.summary, confirmed: [] }
-        const verified = await parallel(review.findings.map((f) => async () => {
-            const verdict = await agent(`${COMMON}
-Адверсариально проверь находку (измерение ${d.key}). Попробуй ОПРОВЕРГНУТЬ её реальным кодом: компенсирующий код, неверно прочитанный дифф, санкционированное решение. Если находка реальна, но severity завышена/занижена — верни adjustedSeverity. Находка: [${f.severity}] ${f.title} — ${f.file}${f.line ? ':' + f.line : ''}. Доказательство: ${f.evidence}`,
-                { label: `verify:${d.key}`, phase: 'Verify', schema: VERDICT_SCHEMA },
-            )
-            return { ...f, severity: verdict?.adjustedSeverity ?? f.severity, verdict }
-        }))
-        return {
-            key: d.key,
-            summary: review.summary,
-            confirmed: verified.filter(Boolean).filter((f) => f.verdict?.isReal),
-        }
-    },
-)
-
-const out = results.filter(Boolean)
-log(`Подтверждено находок: ${out.reduce((n, r) => n + r.confirmed.length, 0)}`)
-return out
 ```
+
+A verifier returns a verdict per finding:
+
+```json
+{
+  "isReal": true,
+  "reasoning": "what refutation was attempted and why it failed/succeeded",
+  "adjustedSeverity": "blocker | major | minor  (only when re-graded)"
+}
+```
+
+An empty `findings` list is a valid finder result — no inventing problems for
+volume. What survives into the confirmed set: findings with `isReal: true`, at
+`adjustedSeverity` when present, original severity otherwise.
+
+## The shared preamble
+
+Every finder and verifier prompt starts from the same factual preamble. Keep it
+factual and specific; template:
+
+```
+Репозиторий <path>, working tree = НЕЗАКОММИЧЕННЫЙ <stage> (<N файлов, +X/−Y>,
+base=<hash>). <что заявлено>. Санкционировано: <решения этапа, не флагать>.
+Ты ревьюер-верификатор. Смотри РЕАЛЬНЫЙ код (git diff HEAD, git show
+HEAD:<path>). <статус гейта — правдиво для твоего runtime: «запущен отдельно и
+идёт параллельно — НЕ запускай его сам» или «уже прогнан, результат: …»>.
+Пустой список находок валиден.
+```
+
+Name the base commit, the claim, and — critically — what is *sanctioned*, so
+verifiers don't re-flag deliberate decisions. State the gate status truthfully:
+in a runtime that backgrounds the gate it runs in parallel; in a synchronous
+runtime it has already finished and its result is known.
 
 ## Dimension menu (pick what the stage touched)
 
@@ -130,16 +109,3 @@ return out
   both and diff programmatically.
 - **money-path** — auth sessions, sync eligibility, purchases/entitlement,
   migrations. Higher vote count; these fail silently and expensively.
-
-## Gotchas
-
-- Workflow scripts are plain JS, not TS — no type annotations, interfaces, or
-  generics.
-- Do **not** put backticks inside a template-literal prompt (nested backticks
-  fail to parse) — use quotes for inline code in prompts.
-- `pipeline(items, stage1, stage2)` runs each item through all stages with no
-  barrier — the default. Only use `parallel()` (a barrier) when a stage genuinely
-  needs *all* prior results at once (e.g. dedup across every finding before an
-  expensive pass).
-- Retrieve the result with the workflow's task id; the `result` field holds the
-  returned array. Parse it and act on `confirmed` findings.
