@@ -4,13 +4,13 @@
         "name": "Dmitrii Ivannikov",
         "email": "ivannikov.web@gmail.com"
     },
-    "description": "Personal agent skills: agents-md, brainstorming-handoff, cross-review, youtube-notes, zip-context",
+    "description": "Personal agent skills: agents-md, brainstorming-handoff, cross-review, stage-orchestrator, youtube-notes, zip-context",
     "plugins": [
         {
             "name": "ytil-skills",
             "source": ".",
-            "description": "All skills from this repo: write/review AGENTS.md and CLAUDE.md, brainstorm ideas into a design handoff, pack a clean project-context zip, cross-review a task in Claude + Codex, and turn a YouTube video into a distilled note with screenshots.",
-            "version": "1.4.1"
+            "description": "All skills from this repo: write/review AGENTS.md and CLAUDE.md, brainstorm ideas into a design handoff, pack a clean project-context zip, cross-review a task in Claude + Codex, orchestrate multi-stage delegated work with hard verification, and turn a YouTube video into a distilled note with screenshots.",
+            "version": "1.5.0"
         }
     ]
 }
