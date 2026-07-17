@@ -15,6 +15,13 @@ from pathlib import Path, PurePosixPath
 
 IGNORE_FILE_NAME = "zip_context_ignore.md"
 
+# When zip_context_ignore.md is absent, fall back to these VCS ignore files (patterns combined).
+FALLBACK_IGNORE_FILES = (".gitignore", ".arcignore")
+
+# VCS metadata dirs that the fallback ignore files never list themselves but must stay
+# out of a context archive — otherwise a .gitignore fallback would pack the whole history.
+FALLBACK_BASELINE_PATTERNS = (".git/", ".arc/")
+
 
 @dataclass(frozen=True)
 class ProjectSetup:
@@ -27,6 +34,7 @@ class ProjectSetup:
 @dataclass(frozen=True)
 class IgnoreState:
     patterns: list[str]
+    source: str
 
 
 @dataclass(frozen=True)
@@ -92,13 +100,13 @@ def main() -> int:
     print(f".gitignore: {'found' if setup.has_gitignore else 'missing'}")
 
     try:
-        ignore_state = load_ignore_file(setup)
+        ignore_state = load_ignore_state(setup)
     except (FileNotFoundError, ValueError) as exc:
-        print(f"{IGNORE_FILE_NAME}: unavailable")
+        print("ignore source: unavailable")
         sys.stderr.write(f"{exc}\n")
         return 1
 
-    print(f"{IGNORE_FILE_NAME}: loaded")
+    print(f"ignore source: {ignore_state.source}")
 
     output_path = args.output.resolve() if args.output else default_output_path(setup.root)
     ignore_patterns = ignore_state.patterns
@@ -176,13 +184,45 @@ def default_output_path(root: Path) -> Path:
     return root / "output" / "share" / archive_name
 
 
-def load_ignore_file(setup: ProjectSetup) -> IgnoreState:
-    if not setup.ignore_file.exists():
-        raise FileNotFoundError(
-            f"{IGNORE_FILE_NAME} not found. Create it manually before running zip."
+def load_ignore_state(setup: ProjectSetup) -> IgnoreState:
+    if setup.ignore_file.exists():
+        return IgnoreState(
+            patterns=parse_ignore_file(setup.ignore_file),
+            source=IGNORE_FILE_NAME,
         )
 
-    return IgnoreState(patterns=parse_ignore_file(setup.ignore_file))
+    fallback_sources: list[str] = []
+    patterns: list[str] = list(FALLBACK_BASELINE_PATTERNS)
+    for name in FALLBACK_IGNORE_FILES:
+        candidate = setup.root / name
+        if candidate.is_file():
+            patterns.extend(
+                normalize_fallback_pattern(pattern) for pattern in parse_ignore_file(candidate)
+            )
+            fallback_sources.append(name)
+
+    if not fallback_sources:
+        raise FileNotFoundError(
+            f"{IGNORE_FILE_NAME} not found and no fallback ignore file "
+            f"({' / '.join(FALLBACK_IGNORE_FILES)}) present. "
+            f"Create {IGNORE_FILE_NAME} manually before running zip."
+        )
+
+    return IgnoreState(patterns=patterns, source=f"fallback: {', '.join(fallback_sources)}")
+
+
+def normalize_fallback_pattern(pattern: str) -> str:
+    """Adapt a .gitignore/.arcignore line to the root-relative matcher.
+
+    The matcher runs against repo-root-relative paths, so a leading `/` anchor
+    (e.g. `/node_modules`) would never match. Strip that single anchor, keeping any
+    leading `!` negation intact. Other gitignore semantics already map onto the matcher.
+    """
+    negation = pattern.startswith("!")
+    body = pattern[1:] if negation else pattern
+    if body.startswith("/"):
+        body = body[1:]
+    return f"!{body}" if negation else body
 
 
 def parse_ignore_file(path: Path) -> list[str]:
@@ -342,7 +382,7 @@ def matches_ignore_pattern(path_string: str, pattern: str) -> bool:
             if path_string == directory or path_string.startswith(f"{directory}/"):
                 return True
             return False
-        return directory in path_parts
+        return any(fnmatchcase(part, directory) for part in path_parts)
 
     if any(char in pattern for char in "*?["):
         if fnmatchcase(path_string, pattern) or fnmatchcase(path_name, pattern):
