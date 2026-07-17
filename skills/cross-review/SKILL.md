@@ -1,15 +1,15 @@
 ---
 name: cross-review
-description: "Cross-review orchestrator: run a read-only analysis task through Claude and Codex in parallel, have each model cross-review the other's analysis against the real code, and synthesize one final verdict. Use when the user asks for a cross-review, a second opinion from both models, wants an analysis double-checked by two independent AI agents, or says 'кросс-ревью', 'спроси обе модели', 'прогони через обе модели'. Read-only tasks only (analysis, diagnosis, review, planning — no code edits). Runs on subscription limits (Claude + ChatGPT), never API keys."
+description: "Cross-review orchestrator: run any read-only task — code analysis, diagnosis, research, fact-finding — through Claude and Codex in parallel, have each model cross-review the other's answer, and synthesize one final verdict. Use when the user asks for a cross-review, a second opinion from both models, wants an answer double-checked by two independent AI agents, or says 'кросс-ревью', 'спроси обе модели', 'прогони через обе модели', 'проверь через обе модели'. Read-only tasks only (analysis, diagnosis, review, planning, research — no code edits). Runs on subscription limits (Claude + ChatGPT), never API keys."
 ---
 
 # Cross Review
 
 Run one read-only task through a 5-call pipeline:
 
-1. **Analysis** — Claude and Codex analyze the task independently, in parallel.
-2. **Cross-review** — Codex reviews Claude's analysis, Claude reviews Codex's, in parallel; each verifies the opponent's claims against the actual code.
-3. **Synthesis** — one configurable model (default Claude) writes a single verdict from the four anonymized artifacts.
+1. **Analysis** — Claude and Codex work on the task independently, in parallel.
+2. **Cross-review** — Codex reviews Claude's answer, Claude reviews Codex's, in parallel. Each review continues its author's own analysis session (the task and the reviewer's own answer are already in context; only the opponent's answer is new), and independently verifies the opponent's key claims.
+3. **Synthesis** — one configurable model (default Claude) starts from a clean slate and writes a single verdict from the four anonymized artifacts.
 
 The verdict is printed to stdout; a full report (all 5 artifacts + metadata) is saved to `~/.cache/cross-review/<timestamp>-<slug>/report.md`.
 
@@ -34,7 +34,8 @@ echo "<long task>" | node cross-review.ts - [options]
 --codex=<model>:<effort>                       Codex side: its analysis + its review
 --synthesizer=<claude|codex>:<model>:<effort>  who writes the verdict (default: claude,
                                                inheriting --claude settings when given)
---cwd <dir>       repository to analyze (default: current directory)
+--cwd <dir>       working directory for the agents (default: current directory;
+                  only matters when the task concerns its contents)
 --out <dir>       report directory override
 --timeout <min>   per-call timeout (default: 10; raise for ultracode runs)
 --json            machine-readable output
@@ -86,6 +87,7 @@ Model naming — concrete slugs only:
   do not point the pipeline at an untrusted repository.
 - Never launch without the approval gate, even when all parameters are explicit.
 - Do not add your own analysis on top of the verdict; the pipeline's value is the
-  isolated five-call process — two analyses, two cross-reviews, one synthesis, none
-  sharing context.
+  five-call process with controlled context: two independent analyses, two cross-reviews
+  (each continuing its own author's session, never the opponent's), and a clean-slate
+  synthesis.
 - The script scrubs `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` from its environment: both agents always run on subscription auth. Do not "fix" auth errors by injecting API keys.

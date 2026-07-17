@@ -8,6 +8,8 @@ import {
     type ThreadOptions,
 } from "@openai/codex-sdk";
 
+type CodexThread = ReturnType<Codex["startThread"]>;
+
 import type { Effort, RunParams, RunResult } from "./types.ts";
 
 // Efforts typed natively by the SDK. "max" and "ultracode"→"ultra" are newer
@@ -65,29 +67,36 @@ export async function runCodex({
     role,
     cwd,
     timeoutMs,
+    resume,
 }: RunParams): Promise<RunResult> {
-    const isUltracode = role?.effort === "ultracode";
+    let thread: CodexThread;
+    if (resume) {
+        // Continue a previous session (cross-review runs in the analysis
+        // thread) — model/effort/sandbox options carry over from its creation.
+        thread = resume as CodexThread;
+    } else {
+        const isUltracode = role?.effort === "ultracode";
 
-    const config: NonNullable<CodexOptions["config"]> = {};
-    if (isUltracode) {
-        config.model_reasoning_effort = "ultra";
-    } else if (role?.effort === "max") {
-        config.model_reasoning_effort = "max";
+        const config: NonNullable<CodexOptions["config"]> = {};
+        if (isUltracode) {
+            config.model_reasoning_effort = "ultra";
+        } else if (role?.effort === "max") {
+            config.model_reasoning_effort = "max";
+        }
+
+        const threadOptions: ThreadOptions = {
+            sandboxMode: "danger-full-access",
+            approvalPolicy: "never",
+            workingDirectory: cwd,
+            skipGitRepoCheck: true,
+        };
+        if (role?.model) threadOptions.model = role.model;
+        if (role?.effort && isCodexNativeEffort(role.effort)) {
+            threadOptions.modelReasoningEffort = role.effort;
+        }
+
+        thread = new Codex({ config }).startThread(threadOptions);
     }
-
-    const threadOptions: ThreadOptions = {
-        sandboxMode: "danger-full-access",
-        approvalPolicy: "never",
-        workingDirectory: cwd,
-        skipGitRepoCheck: true,
-    };
-    if (role?.model) threadOptions.model = role.model;
-    if (role?.effort && isCodexNativeEffort(role.effort)) {
-        threadOptions.modelReasoningEffort = role.effort;
-    }
-
-    const codex = new Codex({ config });
-    const thread = codex.startThread(threadOptions);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -99,6 +108,7 @@ export async function runCodex({
         return {
             text: turn.finalResponse,
             model: role?.model ?? codexConfiguredModel(),
+            session: thread,
         };
     } catch (err) {
         if (controller.signal.aborted) {

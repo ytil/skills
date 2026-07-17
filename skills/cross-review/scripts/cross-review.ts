@@ -121,7 +121,12 @@ const program = new Command()
         "who writes the verdict; side is claude|codex (default: claude, inheriting --claude)",
         parseSynthesizerSpec,
     )
-    .option("--cwd <dir>", "repository to analyze", parsePath, process.cwd())
+    .option(
+        "--cwd <dir>",
+        "working directory for the agents (only matters when the task concerns it)",
+        parsePath,
+        process.cwd(),
+    )
     .option("--out <dir>", "report directory override", parsePath)
     .option("--timeout <min>", "per-call timeout in minutes", parseTimeout, 10)
     .option("--json", "machine-readable output")
@@ -136,6 +141,7 @@ Effort values: ${EFFORT_VALUES.join(" | ")}
 
 Examples:
   cross-review "why does test X flake on CI?"
+  cross-review "what is the current EUR/USD rate and this week's trend?"
   cross-review "audit the storage layer" --claude=claude-opus-4-8:high --codex=gpt-5.6-sol:xhigh
   cross-review "review the last commit" --codex=gpt-5.6-sol:xhigh --synthesizer=codex:gpt-5.6-sol:medium
   echo "<long task>" | cross-review -`,

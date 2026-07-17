@@ -45,10 +45,18 @@ export interface CliConfig {
     json: boolean;
 }
 
+/**
+ * Opaque handle for continuing an agent's session in a follow-up call:
+ * the claude runner stores a session id, the codex runner stores its live
+ * Thread object. Same-process use only — never serialized.
+ */
+export type SessionHandle = unknown;
+
 /** One agent call result: the text plus the model that actually ran. */
 export interface RunResult {
     text: string;
     model: string | null;
+    session: SessionHandle | null;
 }
 
 export interface RunParams {
@@ -56,6 +64,8 @@ export interface RunParams {
     role: RoleLike | null;
     cwd: string;
     timeoutMs: number;
+    /** Continue this previous session instead of starting cold. */
+    resume?: SessionHandle | null;
 }
 
 export interface StageFailure {

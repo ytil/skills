@@ -218,23 +218,30 @@ export async function runPipeline(config: CliConfig): Promise<void> {
         );
     }
 
-    // --- Wave 2: cross-review — Codex reviews A, Claude reviews B. A single
-    // --- failed review degrades gracefully: the synthesizer is told about it.
+    // --- Wave 2: cross-review — Codex reviews A, Claude reviews B. Each review
+    // --- CONTINUES its author's analysis session (resume), so the reviewer has
+    // --- the task and its own answer in context; only the opponent's answer is
+    // --- new. A single failed review degrades gracefully: the synthesizer is
+    // --- told about it.
+    const sessionA = resA.status === "fulfilled" ? resA.value.session : null;
+    const sessionB = resB.status === "fulfilled" ? resB.value.session : null;
     const [revA, revB] = await Promise.allSettled([
         timedCall("review of A (codex)", timings, "reviewOfA", () =>
             runCodex({
-                prompt: reviewPrompt(config.task, artifacts.analysisA!),
+                prompt: reviewPrompt(artifacts.analysisA!),
                 role: config.codex,
                 cwd: config.cwd,
                 timeoutMs,
+                resume: sessionB,
             }),
         ),
         timedCall("review of B (claude)", timings, "reviewOfB", () =>
             runClaude({
-                prompt: reviewPrompt(config.task, artifacts.analysisB!),
+                prompt: reviewPrompt(artifacts.analysisB!),
                 role: config.claude,
                 cwd: config.cwd,
                 timeoutMs,
+                resume: sessionA,
             }),
         ),
     ]);

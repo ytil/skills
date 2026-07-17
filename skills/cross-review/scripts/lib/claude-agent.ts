@@ -47,6 +47,7 @@ export async function runClaude({
     role,
     cwd,
     timeoutMs,
+    resume,
 }: RunParams): Promise<RunResult> {
     const isUltracode = role?.effort === "ultracode";
     const finalPrompt = isUltracode ? `ultracode\n\n${prompt}` : prompt;
@@ -67,17 +68,21 @@ export async function runClaude({
     if (role?.effort) {
         options.effort = isUltracode ? "max" : (role.effort as ClaudeEffort);
     }
+    // Continue a previous session (cross-review runs in the analysis session).
+    if (resume) options.resume = resume as string;
 
     try {
         let resultText: string | null = null;
         let errorSubtype: string | null = null;
         let resolvedModel: string | null = null;
+        let sessionId: string | null = null;
         for await (const message of query({ prompt: finalPrompt, options })) {
             // The init message carries the RESOLVED model id (aliases like
             // "sonnet" expanded) — recorded in the report for reproducibility.
             if (message.type === "system" && message.subtype === "init") {
                 resolvedModel = message.model ?? null;
             }
+            if ("session_id" in message) sessionId = message.session_id;
             if (message.type === "result") {
                 if (message.subtype === "success") resultText = message.result;
                 else errorSubtype = message.subtype;
@@ -88,7 +93,7 @@ export async function runClaude({
                 `claude run ended without a result (${errorSubtype ?? "no result message"})`,
             );
         }
-        return { text: resultText, model: resolvedModel };
+        return { text: resultText, model: resolvedModel, session: sessionId };
     } catch (err) {
         if (controller.signal.aborted) {
             throw new Error(
