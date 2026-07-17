@@ -10,8 +10,8 @@ description: >-
   produced, or when the user says "проверь что сделано", "выдай промпт для
   этапа", "верифицируй", "заказчик прислал отчёт", or names a stage number —
   the point is the delegate → verify → fix → commit loop, not any single
-  keyword. Not for reviewing a small self-authored diff — that is plain code
-  review.
+  keyword. Not for reviewing a diff this session authored itself or an
+  ordinary PR — that is plain code review.
 ---
 
 # Stage orchestrator
@@ -66,7 +66,11 @@ because the report says green — the report is a claim, not evidence.
    runtime that only runs commands synchronously (Codex) runs the gate first
    and reads the result before starting the review.
 
-2. **Inventory the diff.** `git status --short | wc -l`, `git diff --stat | tail`.
+2. **Inventory the diff — in the worktree.** Every command in steps 2–4 runs
+   against the reported worktree, not the orchestrator checkout — use
+   `git -C <worktree>` (and grep/read paths under `<worktree>/`) so a habitual
+   bare `git diff` doesn't silently inspect the wrong tree.
+   `git -C <worktree> status --short | wc -l`, `git -C <worktree> diff --stat | tail`.
    You need the scale (10 files vs 200) to calibrate how deep to review and
    which claims are load-bearing. Note untracked files separately — `git diff`
    does not show them, and a stage that *adds* files hides its most important
@@ -91,8 +95,8 @@ because the report says green — the report is a claim, not evidence.
    *hallucinates*; its report says "0 refs" or "fully removed" when it is not.
    For every "removed / migrated / equivalent" claim, check it with a grep by
    **symbol name**, alias-aware, excluding tests where tests are not the point:
-   `grep -rn '<symbol>' src --include='*.ts' | grep -v '\.test\.'` (adapt the
-   include pattern to the repo's language). If the claim
+   `grep -rn '<symbol>' <worktree>/src --include='*.ts' | grep -v '\.test\.'`
+   (adapt the include pattern to the repo's language). If the claim
    is "SQL is 1:1", compile the query and diff the SQL — do not read it. If the
    claim is "schema mirrors X", dump both and diff them with a script. If the
    claim is "the new gate/rule is equivalent to the old one", do not settle for
@@ -132,7 +136,11 @@ because the report says green — the report is a claim, not evidence.
    committing after a fix without re-running the *full* gate: a passing typecheck
    is not a passing dead-code/format check.
 
-8. **Land the worktree on `main`.** First sync `main` with the remote —
+8. **Land the worktree on `main`.** First **join on the background gate from
+   step 1**: wait for it to finish and require green. When no fixes were
+   confirmed, steps 5–7 were a no-op and this is the loop's only mandatory look
+   at the gate result — a fast review on a small diff can otherwise outrun a
+   still-running gate and land red. Then sync `main` with the remote —
    `git pull`, resolving conflicts if the remote moved — because landing on a
    stale local tip only defers the same conflicts to push time, after the gate
    evidence has gone stale. The verified work is uncommitted inside the

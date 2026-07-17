@@ -22,7 +22,8 @@ update it) — so the next stage doesn't re-derive it.
 ## Worked instance: pnpm monorepo (prettier / eslint / knip)
 
 The battle-tested instance this skill grew up on. Full gate: `pnpm qa` from the
-repo root. Its failure modes recur; know them so a red gate does not stall you:
+repo root — in the verify loop that means the *worktree's* root, not the
+orchestrator checkout. Its failure modes recur; know them so a red gate does not stall you:
 
 - **`format:check` red** — you (or an agent) added/edited files without
   formatting. `npx prettier --write <files>` then re-run. New files are the usual

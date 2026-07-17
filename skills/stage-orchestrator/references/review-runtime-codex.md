@@ -12,7 +12,8 @@ is what makes the review adversarial.
    background execution to overlap with. Put its actual result into the shared
    preamble («гейт уже прогнан, результат: …»), not the parallel-gate wording.
 2. **Review one dimension at a time**, each as a self-contained pass: re-read
-   the real diff (`git diff HEAD`, `git show HEAD:<path>`) for that dimension's
+   the real diff in the worktree (`git -C <worktree> diff HEAD`,
+   `git -C <worktree> show HEAD:<path>`) for that dimension's
    checks specifically; do not reuse conclusions from a previous dimension —
    the dimensions are supposed to be blind to each other, and in a single
    context the only blindness available is the discipline of re-deriving from
