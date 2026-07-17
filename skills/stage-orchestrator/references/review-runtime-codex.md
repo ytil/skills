@@ -1,10 +1,10 @@
 # Review mechanics — Codex and other single-context runtimes
 
 Read `review-workflow.md` first for the method and the data contract; this file
-is the degradation path for a runtime with no workflow engine, no subagents,
-and synchronous command execution. The goal is to preserve as much of the
-method's *independence* as the runtime allows — independence, not parallelism,
-is what makes the review adversarial.
+is the degradation path for a runtime with no workflow engine, no parallel
+isolated review agents, and synchronous command execution. The goal is to
+preserve as much of the method's *independence* as the runtime allows —
+independence, not parallelism, is what makes the review adversarial.
 
 ## Order of work
 
@@ -35,6 +35,19 @@ is what makes the review adversarial.
 5. **Validate the JSON yourself.** There is no schema-enforcing tool layer:
    parse what came back (`jq` or equivalent), and re-ask on malformed output
    rather than hand-repairing it.
+6. **Apply the confirmed fixes in a separate subagent — not in the
+   orchestrator session.** Freeze the confirmed set, then hand it to a spawned
+   subagent as a self-contained prompt: the worktree path (work only there),
+   the full list — file, line, evidence, intended fix per finding — and the
+   rules "the set is already adversarially confirmed, do not re-litigate it;
+   if a fix cannot be applied as stated, STOP and report instead of
+   inventing; report back what was applied and what was not". You stay the
+   reviewer and committer: check the subagent's work with a
+   `git -C <worktree> diff` scoped to the expected files (nothing outside the
+   list may change) and re-run the full gate — step 7 of the loop. Only if
+   the runtime truly cannot spawn a subagent, apply the fixes yourself:
+   frozen set first, work through it mechanically, no re-litigating
+   mid-edit. (A lone trivial edit may be done inline either way.)
 
 ## What is lost and how to compensate
 
@@ -45,8 +58,6 @@ is what makes the review adversarial.
   weighting your *own machine-checks* (the skill's step 4) higher: in this
   runtime they are the only evidence source that cannot be contaminated by the
   finder's reasoning.
-- **Fix isolation** — there is no fix subagent; you will apply fixes yourself.
-  Freeze the confirmed set before the first edit and work through it
-  mechanically; do not re-litigate findings mid-edit (they were already
-  adversarially confirmed), and re-run the full gate after — same as step 7 of
-  the loop.
+- **Fix isolation** — preserved, via the fix subagent of step 6 above; only
+  the no-subagent fallback loses it, and then the frozen-set discipline is the
+  compensation.

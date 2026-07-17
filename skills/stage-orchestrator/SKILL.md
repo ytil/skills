@@ -117,17 +117,19 @@ because the report says green — the report is a claim, not evidence.
    prompt that states that decision. Patching a wrong approach costs more than
    re-running the stage and leaves `main` with a shape nobody chose.
 
-6. **Apply the confirmed fixes — via a subagent when the runtime has one.**
+6. **Apply the confirmed fixes — via a subagent, not in your own session.**
    Hand the whole confirmed set — file,
    line, evidence, and the intended fix for each — to one fix subagent (Claude
-   Code: the `Agent` tool) and let it apply the edits **inside the external
+   Code: the `Agent` tool; Codex: a spawned subagent, see step 6 of
+   `references/review-runtime-codex.md`) and let it apply the edits **inside
+   the external
    agent's worktree**, the same tree the gate and review ran against. You stay
    the reviewer and committer; keeping the mechanical editing out of your own
    thread preserves your context for judgment and mirrors the delegate → verify
-   split the whole loop runs on. A runtime without subagents (Codex) applies
-   the fixes itself — freeze the confirmed set first and work through it
-   mechanically, without re-litigating findings mid-edit: the set was already
-   adversarially confirmed. Fix *everything* confirmed, minors included —
+   split the whole loop runs on. Only a runtime that truly cannot spawn a
+   subagent applies the fixes itself — freeze the confirmed set first and work
+   through it mechanically, without re-litigating findings mid-edit: the set
+   was already adversarially confirmed. Fix *everything* confirmed, minors included —
    deferring a real minor just reopens it a stage later. (A lone trivial edit —
    one stale doc line — you may do inline rather than spawn an agent for it.)
 
