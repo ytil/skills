@@ -124,10 +124,34 @@ is backed up to `.<name>.bak` first, and the run prints how many were timecoded 
 ### 5. Spot-check and report
 
 The `apply` gate proves each timecode lands in the **right video** at a **real** line, but not
-that it's the right *moment* for that idea. Read ~10–15 matches (weight toward `*(консенсус)*`
+that it's the right _moment_ for that idea. Read ~10–15 matches (weight toward `*(консенсус)*`
 and `med`-confidence — the hardest to localize) and confirm the idea actually matches the
 quoted line. Report honestly: how many footnotes got timecodes vs stayed plain, and that
 timecodes are approximate (±one ~12-second block).
+
+## Свод со скриншотами (optional)
+
+By default the свод is subtitles-only. When the user explicitly wants screenshots in it
+(«скриншоты важны», «с картинками»), extend the flow after step 4 — the deep-linked
+footnotes are your anchors:
+
+1. **Pick what earns an image.** Not every bullet — visual moments only (redesigns, UI
+   examples, diagrams, size specs), roughly 1–3 per section. The cited timecode in the
+   bullet's footnote is where the frame lives.
+2. **Get the frames.** Preferred: download the source videos (480p video-only, sequential
+   with `sleep 5`+ between them — batch downloads hit the bot-check, see
+   `references/download-fallbacks.md`) and extract with `frames.ts` at the cited timecodes.
+   If downloads stay blocked, use the browser canvas-capture fallback from the same
+   reference.
+3. **Verify every frame visually** before binding it — same rule as the single-video flow:
+   read the image, confirm it shows the idea, nudge ±1–2s or drop it if it doesn't. A
+   series of byte-identical captures means stale frames — recapture.
+4. **Bind and insert.** Copy chosen frames into the vault attachments as `<slug>-NN.<ext>`
+   (check for collisions first; keep numbering in reading order), and insert `![[<name>]]`
+   on its own line directly under the bullet it illustrates. Script the insertion by
+   anchoring on unique bullet substrings — 30 hand-edits invite mistakes.
+5. Save the note after images are in; report how many frames came from downloaded video vs
+   the browser fallback.
 
 ## Notes
 

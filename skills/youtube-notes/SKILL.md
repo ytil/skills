@@ -272,6 +272,10 @@ matters for trust.
   when a slide fully appears. When a grabbed frame looks like a transition, nudge by ±1–2s.
 - **Unavailable/private video.** `fetch.ts` will fail on metadata; report the error plainly
   and stop.
+- **Bot-check / 429 on video download.** "Sign in to confirm you're not a bot" after a few
+  videos is the norm for batch downloads, not a transient error — don't retry blindly and
+  don't report it as "video unavailable". Read `references/download-fallbacks.md`: PO-token
+  provider first (no login), browser canvas-capture as the screenshots-only fallback.
 - **Re-runs.** Reusing the same workdir skips nothing by itself, but the downloaded files
   are already there; it's safe to re-run `contact_sheet.ts`/`frames.ts` against them.
 
@@ -291,7 +295,7 @@ Run each as `node <skill>/scripts/<name>.ts ...`. They shell out to `yt-dlp` and
 - `scripts/frames.ts <video> <outdir> <sec> [<sec> ...] [--offset 0.0]` — full-res frames at
   given timecodes, named by timecode. `--offset` shifts grabs past a scene cut.
 - `scripts/render_obsidian.ts <video.json> <workdir> (--dry-run | --vault <dir>
-  --attachments <dir> --name "<note>" --slug <slug>)` — validate video.json (timecodes,
+--attachments <dir> --name "<note>" --slug <slug>)` — validate video.json (timecodes,
   quote grounding vs transcript, screenshot files) and render the Obsidian note;
   `--dry-run` previews to stdout, the real run copies frames into attachments as
   `<slug>-NN.png` and refuses to overwrite an existing note.
@@ -311,3 +315,6 @@ Run each as `node <skill>/scripts/<name>.ts ...`. They shell out to `yt-dlp` and
   against each video's own transcript and rewrites the footnotes. See `references/aggregation.md`.
 - `scripts/lib.ts` — VTT parsing/formatting, timecode ↔ seconds, and subtitle-track selection
   helpers, shared by `fetch.ts`, `transcripts.ts`, and `cite_timecodes.ts` (not called directly).
+- `scripts/shot-server.mjs <outdir>` — tiny localhost receiver (port 8765) for frames captured
+  from the embedded browser when downloads are blocked; the page POSTs canvas dataURLs, frames
+  land as files. Part of the fallback flow in `references/download-fallbacks.md`.
