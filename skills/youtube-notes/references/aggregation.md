@@ -9,10 +9,18 @@ each idea is distilled once, deduplicated across sources, and every claim carrie
 footnotes `[N]` that **deep-link to the exact timecode** in the source video. It reads like
 the single-video note (distilled, notes-to-self tone) but at collection scale.
 
+Every bullet is a **bold hook plus 2–4 sentences**, not a one-liner. A bare hook forces the
+reader back into the video to find out what it actually meant, which defeats the point of a
+свод — the note has to stand on its own.
+
 ```text
 ## 🧠 Мышление и подход
-- **Одна мысль в одну строку.** [\[13\]](https://www.youtube.com/watch?v=WmpzgtRG8ww&t=336s)
-- **Мысль, звучащая у нескольких авторов** — помечай. *(консенсус)* [\[40\]](...&t=1898s)[\[22\]](...&t=1856s)
+- **Жирный тезис-крючок — одна фраза, которую видно при беглом скролле.** Дальше 2–4
+  предложения: механизм («почему это работает»), конкретика — числа, имена, примеры, —
+  и практический вывод. Пункт должен читаться сам по себе, без обращения к видео.
+  [\[13\]](https://www.youtube.com/watch?v=WmpzgtRG8ww&t=336s)
+- **Мысль, звучащая у нескольких авторов** — помечай. Тело тезиса при этом одно, а сноски
+  перечисляют всех, кто её высказал. *(консенсус)* [\[40\]](...&t=1898s)[\[22\]](...&t=1856s)
 
 # Источники
 1. [Video title](https://www.youtube.com/watch?v=_HiyjLNe_LA)
@@ -46,10 +54,18 @@ handling a handful of videos, each returning **structured** ideas. A good extrac
 > переиспользуемые идеи — советы, правила, числа, фреймворки; пропусти приветствия, рекламу,
 > «подпишись». Для каждой идеи верни объект `{idea, video_id, topic}`, где `idea` — на
 > естественном русском (пересказ, не дословный перевод), `topic` — короткая тема-ярлык.
+> **Каждая идея должна нести смысла на абзац**: механизм («почему так»), конкретика — числа,
+> имена, версии, примеры, — и практический вывод. Не «используй сетку», а «держи отступы
+> кратными 8: 8/16/24/32 — это даёт ритм и упрощает передачу в разработку».
 > Запиши JSON-массив в `<путь>`.
 
 Collect all the `{idea, video_id, topic}` objects. Expect heavy overlap across videos from the
 same author — that's the raw material for consensus marking, not noise.
+
+Ask for the detail **here**, at extraction. Thin one-line ideas can't be expanded later — by
+synthesis time the transcripts are out of your context, and re-reading them defeats the fan-out.
+For technical channels add: имена API, команд и пакетов оставляй латиницей, а искажения
+авто-субтитров нормализуй (`headerShown` слышится как «they're shown»).
 
 ### 3. Synthesize one note (solo, your judgment)
 
@@ -60,6 +76,10 @@ This is the heart of it and it's **your** work, not an agent's:
   don't force a fixed taxonomy.
 - **Distil and dedup.** One idea, stated once, in the user's voice. When several videos make
   the same point, merge them into one bullet and cite all of them.
+- **Expand every bullet.** Bold hook, then 2–4 sentences carrying the mechanism, the concrete
+  detail (numbers, names, versions, examples) and the practical takeaway. Compressing a rich
+  idea back into one line is the most common way a свод turns useless — the user then has to
+  open the video to recover what the hook meant. Length isn't the goal; self-sufficiency is.
 - **Mark consensus.** When a point recurs across **different** authors/videos, append
   `*(консенсус)*` before its footnotes — it flags the ideas with the most support.
 - **Footnotes.** End each bullet with `[N]` for every source video it draws on (bare `[N]` is
