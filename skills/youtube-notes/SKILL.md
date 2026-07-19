@@ -276,6 +276,12 @@ matters for trust.
   videos is the norm for batch downloads, not a transient error — don't retry blindly and
   don't report it as "video unavailable". Read `references/download-fallbacks.md`: PO-token
   provider first (no login), browser canvas-capture as the screenshots-only fallback.
+- **Captions that arrive as gibberish.** When YouTube mis-detects the original language it
+  ships phonetic nonsense (and the `en` track is a translation of that nonsense, not a second
+  ASR pass). Catch it by words-per-minute — healthy auto-captions run 170–260, broken ones
+  score single digits. Fix 4 in `references/download-fallbacks.md` recovers the audio with
+  `whisper-cpp`; note that this only restores timecodes, so any ideas already extracted from
+  such a video must be extracted again.
 - **Re-runs.** Reusing the same workdir skips nothing by itself, but the downloaded files
   are already there; it's safe to re-run `contact_sheet.ts`/`frames.ts` against them.
 
