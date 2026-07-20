@@ -16,7 +16,13 @@
 // moment. Sheets are written as sheet_00.jpg, sheet_01.jpg, ...
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    writeFileSync,
+} from "node:fs";
 import { basename, join, resolve } from "node:path";
 
 import { INIT_SCRIPT, requireCommand } from "./lib.ts";

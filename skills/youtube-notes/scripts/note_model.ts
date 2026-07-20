@@ -95,7 +95,9 @@ export function validateNotes(
         return problems;
     }
     if (notes.sections.length > 10) {
-        problems.push(`${notes.sections.length} sections — too many, merge to <=10`);
+        problems.push(
+            `${notes.sections.length} sections — too many, merge to <=10`,
+        );
     }
 
     let tx: LoadedTranscript | null = null;
@@ -109,7 +111,9 @@ export function validateNotes(
 
     const checkT = (t: number, where: string): void => {
         if (!(t >= 0) || t > v.duration + 5) {
-            problems.push(`${where}: t=${t}s is outside the video (0..${v.duration}s)`);
+            problems.push(
+                `${where}: t=${t}s is outside the video (0..${v.duration}s)`,
+            );
         }
     };
 
@@ -121,26 +125,37 @@ export function validateNotes(
             problems.push(`${sid}: no ideas`);
             return;
         }
-        if (s.ideas.length > 8) problems.push(`${sid}: ${s.ideas.length} ideas — split the section`);
+        if (s.ideas.length > 8)
+            problems.push(
+                `${sid}: ${s.ideas.length} ideas — split the section`,
+            );
         s.ideas.forEach((idea, ii) => {
             const iid = `${sid}.ideas[${ii}]`;
             if (!idea.tldr_ru?.trim()) problems.push(`${iid}: empty tldr_ru`);
             if (idea.points_ru && idea.points_ru.length > 5) {
-                problems.push(`${iid}: ${idea.points_ru.length} points — distill to <=4`);
+                problems.push(
+                    `${iid}: ${idea.points_ru.length} points — distill to <=4`,
+                );
             }
             if (idea.mermaid?.includes("```")) {
-                problems.push(`${iid}: mermaid source must not contain \`\`\` fences`);
+                problems.push(
+                    `${iid}: mermaid source must not contain \`\`\` fences`,
+                );
             }
             if (idea.screenshot && framesDir) {
                 if (!existsSync(join(framesDir, idea.screenshot))) {
-                    problems.push(`${iid}: screenshot ${idea.screenshot} not found in ${framesDir}`);
+                    problems.push(
+                        `${iid}: screenshot ${idea.screenshot} not found in ${framesDir}`,
+                    );
                 }
             }
             const q = idea.quote;
             if (q) {
                 checkT(q.t, `${iid}.quote`);
                 if (!q.text_ru?.trim() || !q.orig?.trim()) {
-                    problems.push(`${iid}.quote: text_ru and orig are both required`);
+                    problems.push(
+                        `${iid}.quote: text_ru and orig are both required`,
+                    );
                 } else if (tx) {
                     // Ground the quote: its verbatim `orig` must match the transcript
                     // around t (the stamped block or a neighbour — timecodes are block-
@@ -149,7 +164,10 @@ export function validateNotes(
                     const cand = [idx - 1, idx, idx + 1]
                         .filter((j) => j >= 0 && j < tx!.blocks.length)
                         .map((j) => tx!.blocks[j]!.text);
-                    const best = Math.max(0, ...cand.map((c) => containment(q.orig, c)));
+                    const best = Math.max(
+                        0,
+                        ...cand.map((c) => containment(q.orig, c)),
+                    );
                     if (best < QUOTE_MATCH_THRESHOLD) {
                         problems.push(
                             `${iid}.quote: orig not found in transcript near [${secToStamp(q.t)}] ` +

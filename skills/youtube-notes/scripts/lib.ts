@@ -63,7 +63,8 @@ export function runCmd(
         });
         const failed = r.status !== 0 || r.error !== undefined;
         const timedOut =
-            (r.error as NodeJS.ErrnoException | undefined)?.code === "ETIMEDOUT";
+            (r.error as NodeJS.ErrnoException | undefined)?.code ===
+            "ETIMEDOUT";
         const transient =
             timedOut ||
             TRANSIENT_RE.test(`${r.stderr ?? ""} ${r.error?.message ?? ""}`);
@@ -120,7 +121,10 @@ export function secToStamp(sec: number): string {
 // surrounding [brackets]) back into seconds. Returns null if the string isn't a timecode —
 // used to turn the `[M:SS]` block stamps in a cleaned transcript into `&t=<sec>s` links.
 export function stampToSec(stamp: string): number | null {
-    const s = stamp.trim().replace(/^\[|\]$/g, "").trim();
+    const s = stamp
+        .trim()
+        .replace(/^\[|\]$/g, "")
+        .trim();
     if (!/^\d+(?::\d{1,2}){1,2}$/.test(s)) return null;
     const parts = s.split(":").map(Number);
     if (parts.some((n) => Number.isNaN(n))) return null;

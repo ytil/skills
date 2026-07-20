@@ -18,7 +18,13 @@
 //     share content every new slide is a scene change, so these timecodes land on keepable
 //     frames. The skill still visually filters them (many scenes are just the talking head).
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+    existsSync,
+    mkdirSync,
+    readdirSync,
+    readFileSync,
+    writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -146,10 +152,14 @@ function main(): void {
     mkdirSync(workdir, { recursive: true });
 
     console.error("→ Fetching metadata...");
-    const meta = runCmd("yt-dlp", ["--dump-single-json", "--skip-download", url], {
-        timeoutMs: 120_000,
-        retries: 2,
-    });
+    const meta = runCmd(
+        "yt-dlp",
+        ["--dump-single-json", "--skip-download", url],
+        {
+            timeoutMs: 120_000,
+            retries: 2,
+        },
+    );
     if (meta.status !== 0) {
         die(
             "could not fetch video metadata:\n" +

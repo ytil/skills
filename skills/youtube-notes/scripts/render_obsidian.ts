@@ -58,7 +58,8 @@ function renderIdea(
         parts.push(bulletBlock());
     }
     if (idea.screenshot) parts.push(`![[${embedName(idea.screenshot)}]]`);
-    if (idea.mermaid) parts.push("```mermaid\n" + idea.mermaid.trim() + "\n```");
+    if (idea.mermaid)
+        parts.push("```mermaid\n" + idea.mermaid.trim() + "\n```");
     if (idea.quote) {
         const q = idea.quote;
         parts.push(
@@ -80,7 +81,9 @@ export function renderNote(
                 ? `## [${s.title_ru.trim()}](${deepLink(url, s.t)})`
                 : `## ${s.title_ru.trim()}`;
         out.push("", header, "");
-        out.push(s.ideas.map((i) => renderIdea(i, url, embedName)).join("\n\n"));
+        out.push(
+            s.ideas.map((i) => renderIdea(i, url, embedName)).join("\n\n"),
+        );
     }
     out.push("", "# Links", `- [${notes.video.title}](${url})`, "");
     return out.join("\n");
@@ -128,13 +131,18 @@ function main(): void {
     const name = getOpt("--name");
     const slug = getOpt("--slug");
     if (!vault || !attachments || !name || !slug) {
-        die("real run needs --vault, --attachments, --name and --slug (or use --dry-run)");
+        die(
+            "real run needs --vault, --attachments, --name and --slug (or use --dry-run)",
+        );
     }
     if (!existsSync(vault)) die(`vault dir not found: ${vault}`);
-    if (!existsSync(attachments)) die(`attachments dir not found: ${attachments}`);
+    if (!existsSync(attachments))
+        die(`attachments dir not found: ${attachments}`);
     const notePath = join(vault, `${name}.md`);
     if (existsSync(notePath)) {
-        die(`note already exists: ${notePath} — pick another name, not overwriting`);
+        die(
+            `note already exists: ${notePath} — pick another name, not overwriting`,
+        );
     }
 
     // Copy each referenced frame to a clean collision-safe attachment name, in
@@ -152,15 +160,23 @@ function main(): void {
         for (const idea of s.ideas) {
             if (idea.screenshot && !mapping.has(idea.screenshot)) {
                 const target = nextFree();
-                copyFileSync(join(framesDir, idea.screenshot), join(attachments, target));
+                copyFileSync(
+                    join(framesDir, idea.screenshot),
+                    join(attachments, target),
+                );
                 mapping.set(idea.screenshot, target);
             }
         }
     }
 
-    writeFileSync(notePath, renderNote(notes, (f) => mapping.get(f) ?? f));
+    writeFileSync(
+        notePath,
+        renderNote(notes, (f) => mapping.get(f) ?? f),
+    );
     console.error(`Note:        ${notePath}`);
-    console.error(`Screenshots: ${mapping.size} → ${attachments} (${slug}-01..)`);
+    console.error(
+        `Screenshots: ${mapping.size} → ${attachments} (${slug}-01..)`,
+    );
 }
 
 // Allow importing renderNote from render_html/tests without running the CLI.

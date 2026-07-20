@@ -105,14 +105,22 @@ function ideaHtml(idea: Idea, url: string): string {
     const parts: string[] = [`<p class="tldr">${esc(idea.tldr_ru.trim())}</p>`];
     if (idea.points_ru?.length) {
         parts.push(
-            "<ul>" + idea.points_ru.map((p) => `<li>${esc(p.trim())}</li>`).join("") + "</ul>",
+            "<ul>" +
+                idea.points_ru
+                    .map((p) => `<li>${esc(p.trim())}</li>`)
+                    .join("") +
+                "</ul>",
         );
     }
     if (idea.screenshot) {
-        parts.push(`<img src="assets/${esc(idea.screenshot)}" alt="" loading="lazy">`);
+        parts.push(
+            `<img src="assets/${esc(idea.screenshot)}" alt="" loading="lazy">`,
+        );
     }
     if (idea.mermaid) {
-        parts.push(`<pre class="mermaid-src">${esc(idea.mermaid.trim())}</pre>`);
+        parts.push(
+            `<pre class="mermaid-src">${esc(idea.mermaid.trim())}</pre>`,
+        );
     }
     if (idea.quote) {
         const q = idea.quote;
@@ -174,7 +182,9 @@ ${notes.sections.map((s, i) => sectionHtml(s, i, v.url)).join("\n")}
 function main(): void {
     const argv = process.argv.slice(2);
     if (argv.length < 2) {
-        die("usage: render_html.ts <video.json> <workdir> --out <dir> --slug <slug>");
+        die(
+            "usage: render_html.ts <video.json> <workdir> --out <dir> --slug <slug>",
+        );
     }
     const notesPath = argv[0] as string;
     const workdir = argv[1] as string;

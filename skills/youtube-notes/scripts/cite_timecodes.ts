@@ -42,8 +42,7 @@ import { containment, loadTranscript, stampToSec } from "./lib.ts";
 const SOURCES_HEADERS = ["# Источники", "# Links", "# Sources"];
 // A footnote is either the already-clickable form [\[N\]](url) or a bare [N] not followed
 // by "(" (so we don't mistake a markdown link's text for a citation). Tried in that order.
-const CITE_RE =
-    /\[\\\[(\d+)\\\]\]\((https?:\/\/[^)]+?)\)|\[(\d+)\](?!\()/g;
+const CITE_RE = /\[\\\[(\d+)\\\]\]\((https?:\/\/[^)]+?)\)|\[(\d+)\](?!\()/g;
 const SRC_LINE_RE = /^\s*(\d+)\.\s+\[[^\]]*\]\((https?:\/\/[^)]+)\)/;
 
 interface Occurrence {
@@ -136,7 +135,12 @@ function transcriptPath(dir: string, vid: string): string {
 
 // ---------------------------------------------------------------- plan
 
-function plan(note: string, transcriptsDir: string, workdir: string, perBin: number): void {
+function plan(
+    note: string,
+    transcriptsDir: string,
+    workdir: string,
+    perBin: number,
+): void {
     const { lines, sources } = readNote(note);
     const occ = occurrences(lines, sources);
 
@@ -148,7 +152,10 @@ function plan(note: string, transcriptsDir: string, workdir: string, perBin: num
             unmapped++;
             continue;
         }
-        (byVideo.get(o.video_id) ?? byVideo.set(o.video_id, []).get(o.video_id)!).push(o);
+        (
+            byVideo.get(o.video_id) ??
+            byVideo.set(o.video_id, []).get(o.video_id)!
+        ).push(o);
     }
 
     // Greedy bin-packing: aim for ~perBin citations per bin, and never put two
@@ -163,7 +170,10 @@ function plan(note: string, transcriptsDir: string, workdir: string, perBin: num
         let placed = false;
         for (const b of bins) {
             const load = b.reduce((s, x) => s + x.n, 0);
-            if (load + v.n <= perBin && !(heavy(v.n) && b.some((x) => heavy(x.n)))) {
+            if (
+                load + v.n <= perBin &&
+                !(heavy(v.n) && b.some((x) => heavy(x.n)))
+            ) {
                 b.push(v);
                 placed = true;
                 break;
@@ -197,16 +207,30 @@ function plan(note: string, transcriptsDir: string, workdir: string, perBin: num
         writeFileSync(manifest[i]!.task, JSON.stringify(task, null, 1));
     });
     writeFileSync(join(workdir, "occ.json"), JSON.stringify(occ, null, 1));
-    writeFileSync(join(workdir, "manifest.json"), JSON.stringify(manifest, null, 2));
+    writeFileSync(
+        join(workdir, "manifest.json"),
+        JSON.stringify(manifest, null, 2),
+    );
 
-    console.error(`Citations: ${occ.length}  Videos: ${byVideo.size}  Bins: ${bins.length}`);
-    if (unmapped) console.error(`  ⚠ ${unmapped} citations have no matching source-list URL`);
+    console.error(
+        `Citations: ${occ.length}  Videos: ${byVideo.size}  Bins: ${bins.length}`,
+    );
+    if (unmapped)
+        console.error(
+            `  ⚠ ${unmapped} citations have no matching source-list URL`,
+        );
     for (const m of manifest) {
-        console.error(`  bin ${String(m.bin).padStart(2, "0")}: ${m.videos.length} video(s), ${m.citations} cites`);
+        console.error(
+            `  bin ${String(m.bin).padStart(2, "0")}: ${m.videos.length} video(s), ${m.citations} cites`,
+        );
     }
     console.error(`\nTask files → ${join(workdir, "tasks")}/`);
-    console.error(`Next: spawn one matcher agent per task file (see references/aggregation.md),`);
-    console.error(`then: node cite_timecodes.ts apply "${note}" "${transcriptsDir}" "${workdir}"`);
+    console.error(
+        `Next: spawn one matcher agent per task file (see references/aggregation.md),`,
+    );
+    console.error(
+        `then: node cite_timecodes.ts apply "${note}" "${transcriptsDir}" "${workdir}"`,
+    );
 }
 
 // --------------------------------------------------------------- apply
@@ -219,45 +243,94 @@ function apply(note: string, transcriptsDir: string, workdir: string): void {
     const resDir = join(workdir, "res");
     const records = new Map<number, MatchRecord>();
     let resFiles = 0;
-    for (const f of readdirSync(resDir).filter((f) => /^res_.*\.json$/.test(f))) {
+    for (const f of readdirSync(resDir).filter((f) =>
+        /^res_.*\.json$/.test(f),
+    )) {
         resFiles++;
-        const arr = JSON.parse(readFileSync(join(resDir, f), "utf-8")) as MatchRecord[];
+        const arr = JSON.parse(
+            readFileSync(join(resDir, f), "utf-8"),
+        ) as MatchRecord[];
         for (const r of arr) records.set(r.occ_id, r);
     }
 
     const transcripts = new Map<string, ReturnType<typeof loadTranscript>>();
     const getTx = (vid: string) => {
-        if (!transcripts.has(vid)) transcripts.set(vid, loadTranscript(transcriptPath(transcriptsDir, vid)));
+        if (!transcripts.has(vid))
+            transcripts.set(
+                vid,
+                loadTranscript(transcriptPath(transcriptsDir, vid)),
+            );
         return transcripts.get(vid)!;
     };
 
     // occ_id -> validated seconds
     const good = new Map<number, number>();
     const reasons: Record<string, number> = {
-        ok: 0, no_record: 0, wrong_vid: 0, low_conf: 0, null_stamp: 0,
-        bad_stamp: 0, over_dur: 0, line_mismatch: 0,
+        ok: 0,
+        no_record: 0,
+        wrong_vid: 0,
+        low_conf: 0,
+        null_stamp: 0,
+        bad_stamp: 0,
+        over_dur: 0,
+        line_mismatch: 0,
     };
     for (const o of occ) {
         const r = records.get(o.occ_id);
-        if (!r) { reasons.no_record!++; continue; }
-        if (o.video_id && r.vid && r.vid !== o.video_id) { reasons.wrong_vid!++; continue; }
-        if ((r.confidence ?? "").toLowerCase() === "low") { reasons.low_conf!++; continue; }
-        if (!r.stamp) { reasons.null_stamp!++; continue; }
+        if (!r) {
+            reasons.no_record!++;
+            continue;
+        }
+        if (o.video_id && r.vid && r.vid !== o.video_id) {
+            reasons.wrong_vid!++;
+            continue;
+        }
+        if ((r.confidence ?? "").toLowerCase() === "low") {
+            reasons.low_conf!++;
+            continue;
+        }
+        if (!r.stamp) {
+            reasons.null_stamp!++;
+            continue;
+        }
         const sec = stampToSec(r.stamp);
-        if (sec === null) { reasons.bad_stamp!++; continue; }
+        if (sec === null) {
+            reasons.bad_stamp!++;
+            continue;
+        }
         const vid = o.video_id ?? r.vid;
-        if (!vid) { reasons.wrong_vid!++; continue; }
+        if (!vid) {
+            reasons.wrong_vid!++;
+            continue;
+        }
         let tx: ReturnType<typeof loadTranscript>;
-        try { tx = getTx(vid); } catch { reasons.bad_stamp!++; continue; }
+        try {
+            tx = getTx(vid);
+        } catch {
+            reasons.bad_stamp!++;
+            continue;
+        }
         const key = r.stamp.trim().replace(/^\[|\]$/g, "");
         const idx = tx.byStamp.get(key);
-        if (idx === undefined) { reasons.bad_stamp!++; continue; }
-        if (tx.duration && sec > tx.duration + 5) { reasons.over_dur!++; continue; }
+        if (idx === undefined) {
+            reasons.bad_stamp!++;
+            continue;
+        }
+        if (tx.duration && sec > tx.duration + 5) {
+            reasons.over_dur!++;
+            continue;
+        }
         const cand = [idx - 1, idx, idx + 1]
             .filter((j) => j >= 0 && j < tx.blocks.length)
             .map((j) => tx.blocks[j]!.text);
-        const best = Math.max(0, ...cand.map((c) => containment(r.line ?? "", c)));
-        if (best < 0.5) { reasons.line_mismatch!++; continue; }
+        const best = Math.max(
+            0,
+            ...cand.map((c) => containment(r.line ?? "", c)),
+        );
+        if (best < 0.5) {
+            reasons.line_mismatch!++;
+            continue;
+        }
         good.set(o.occ_id, sec);
         reasons.ok!++;
     }
@@ -276,13 +349,18 @@ function apply(note: string, transcriptsDir: string, workdir: string): void {
         if (!base) return whole; // no known URL; leave as-is
         const clean = base.replace(/&t=\d+s$/, ""); // idempotent on re-runs
         const sec = good.get(occId);
-        if (sec !== undefined) { added++; return `[\\[${n}\\]](${clean}&t=${sec}s)`; }
+        if (sec !== undefined) {
+            added++;
+            return `[\\[${n}\\]](${clean}&t=${sec}s)`;
+        }
         plainCount++;
         return `[\\[${n}\\]](${clean})`;
     });
 
     if (k !== occ.length) {
-        throw new Error(`citation count mismatch: rewrite saw ${k}, plan saw ${occ.length}`);
+        throw new Error(
+            `citation count mismatch: rewrite saw ${k}, plan saw ${occ.length}`,
+        );
     }
 
     const backup = join(dirname(note), `.${basename(note)}.bak`);
@@ -292,7 +370,8 @@ function apply(note: string, transcriptsDir: string, workdir: string): void {
     console.error(`Result files: ${resFiles}   Citations: ${occ.length}`);
     console.error(`Timecoded: ${added}   Plain video link: ${plainCount}`);
     console.error("Validation breakdown:");
-    for (const [key, v] of Object.entries(reasons)) if (v) console.error(`  ${key}: ${v}`);
+    for (const [key, v] of Object.entries(reasons))
+        if (v) console.error(`  ${key}: ${v}`);
     console.error(`\nBackup: ${backup}`);
     console.error(`Note rewritten: ${note}`);
 }
@@ -310,8 +389,15 @@ function main(): void {
         rest.splice(perBinArg, 2);
     }
     const [note, transcriptsDir, workdir] = rest;
-    if ((mode !== "plan" && mode !== "apply") || !note || !transcriptsDir || !workdir) {
-        console.error("usage: cite_timecodes.ts plan|apply <note.md> <transcripts_dir> <workdir> [--per-bin 18]");
+    if (
+        (mode !== "plan" && mode !== "apply") ||
+        !note ||
+        !transcriptsDir ||
+        !workdir
+    ) {
+        console.error(
+            "usage: cite_timecodes.ts plan|apply <note.md> <transcripts_dir> <workdir> [--per-bin 18]",
+        );
         process.exit(1);
     }
     if (mode === "plan") plan(note, transcriptsDir, workdir, perBin);
