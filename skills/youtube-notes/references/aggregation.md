@@ -40,10 +40,20 @@ Subtitles only — you're synthesizing words, not grabbing screenshots:
 node "<skill>/scripts/transcripts.ts" "<workdir>" "<url1>" "<url2>" ...
 ```
 
-Each video becomes `<workdir>/<id>.txt` (a header + `[M:SS]`-stamped transcript) and an
+Each video becomes `<workdir>/<id>.txt` (a header + stamped transcript) and an
 `index.json` maps id → title → url → status. For a whole channel/playlist, first resolve the
 member URLs with `yt-dlp --flat-playlist --print "%(id)s"` (or `--dump-single-json`), then
 feed them in. Note which videos came back `no_subtitles` — you can't synthesize those.
+
+**Block stamps are `[M:SS]` only under an hour — past `[1:00:00]` they become `[H:MM:SS]`.**
+The scripts handle both, but anything you or an agent writes by hand must too: a regex like
+`^\[\d+:\d\d\]` silently drops every block past the hour, and nothing downstream catches it
+(see step 4b). Use `^\[\d+:\d\d(?::\d\d)?\]`. Check whether the corpus even has such videos
+before fanning out:
+
+```bash
+grep -lc '^\[[0-9]*:[0-9][0-9]:[0-9][0-9]\]' "<workdir>"/*.txt
+```
 
 ### 2. Extract ideas per video (fan out)
 
@@ -113,20 +123,29 @@ verbatim stamp **and** the transcript line, so the next step can validate it):
 >
 > 1. Прочитай задание `<workdir>/tasks/task_NN.json`: `{videos:[{video_id, txt, ideas:[{occ_id, idea, consensus}]}]}`.
 > 2. Для каждого видео прочитай транскрипт по пути `txt`. Каждая строка начинается со стемпа
->    `[M:SS]` — начало ~12-секундного блока. Для каждой идеи найди блок, где мысль звучит
->    прямее всего; сопоставляй по смыслу (имена/числа/названия — якоря; авто-субтитры врут в
->    написании). `consensus:true` — тема нескольких авторов; найди, где ЭТОТ спикер выражает
->    её прямее всего.
+>    `[M:SS]` — начало ~12-секундного блока; **у видео длиннее часа формат становится
+>    `[H:MM:SS]`**, поэтому режь блоки по `^\[\d+:\d\d(?::\d\d)?\]`, а не по `^\[\d+:\d\d\]` —
+>    вторая регулярка молча отбросит всё после 60-й минуты. Для каждой идеи найди блок, где
+>    мысль звучит прямее всего; сопоставляй по смыслу (имена/числа/названия — якоря;
+>    авто-субтитры врут в написании). `consensus:true` — тема нескольких авторов; найди, где
+>    ЭТОТ спикер выражает её прямее всего.
 > 3. На каждую идею верни `{occ_id, vid, stamp, line, confidence}`: `stamp` — скопирован
->    ДОСЛОВНО из блока (`[M:SS]`); `line` — полный текст блока БЕЗ стемпа, дословно;
->    `confidence` — `high` (звучит явно) / `med` (верная область) / `low` или не нашёл →
->    `stamp:null`. Не выдумывай таймкод.
+>    ДОСЛОВНО из блока (`[M:SS]` или `[H:MM:SS]`); `line` — полный текст блока БЕЗ стемпа,
+>    дословно; `confidence` — `high` (звучит явно) / `med` (верная область) / `low` или не
+>    нашёл → `stamp:null`. Не выдумывай таймкод.
 > 4. Запиши JSON-массив в `<workdir>/res/res_NN.json`. `stamp`+`line` сверят с транскриптом
 >    именно этого видео — расхождение отбрасывается, так что копируй точно и никогда не бери
 >    стемп из другого видео.
 
 One video per agent (or a small bin) matters: an agent focused on one transcript pins ideas
 accurately; six transcripts at once invites cross-video mixups.
+
+**Why the hour-format warning above is not pedantry.** A matcher blind to blocks past `[1:00:00]`
+doesn't fail — it picks the closest plausible block from the first hour instead, and every gate
+downstream passes: the `(stamp, line)` pair is a real line of the right video, so `apply` accepts
+it. The link simply points at the wrong moment, and nothing reports it. On a 116-minute video that
+regex hides 238 blocks out of 499. Worth telling matchers explicitly whenever the corpus has a
+video over an hour.
 
 **c. Apply** — validate and rewrite:
 

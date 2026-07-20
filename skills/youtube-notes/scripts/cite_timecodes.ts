@@ -15,8 +15,8 @@
 //          it and the path to that video's <id>.txt transcript.
 //
 //   ——     Claude then spawns one matcher agent per task file. Each reads the transcript,
-//          finds the [M:SS] block where each idea is stated, and writes
-//          <workdir>/res/res_NN.json — a list of {occ_id, vid, stamp, line, confidence}.
+//          finds the [M:SS] block ([H:MM:SS] past an hour) where each idea is stated, and
+//          writes <workdir>/res/res_NN.json — a list of {occ_id, vid, stamp, line, confidence}.
 //          See references/aggregation.md for the exact agent prompt.
 //
 //   apply  node cite_timecodes.ts apply <note.md> <transcripts_dir> <workdir>

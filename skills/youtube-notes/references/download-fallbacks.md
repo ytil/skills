@@ -109,8 +109,9 @@ whisper-cli -m ~/.cache/whisper/ggml-base.en.bin -f audio/<id>.wav -l en -oj -of
 ```
 
 **Conversion is mandatory, not cosmetic.** Re-glue the JSON segments into `[M:SS]` blocks of
-~12 seconds and keep the original `TITLE/CHANNEL/URL/DURATION` header plus the `---`
-separator, exactly as `transcripts.ts` writes them. `cite_timecodes.ts apply` validates each
+~12 seconds — `[H:MM:SS]` once past an hour, since that is what `transcripts.ts` emits — and
+keep the original `TITLE/CHANNEL/URL/DURATION` header plus the `---` separator, exactly as
+`transcripts.ts` writes them. `cite_timecodes.ts apply` validates each
 match by finding the `stamp`+`line` pair **verbatim** in that video's transcript, so a file
 in any other shape silently loses every timecode for that source. Re-run the wpm check
 afterwards to confirm the recovered file lands in the normal band.
