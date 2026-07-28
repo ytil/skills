@@ -5,7 +5,7 @@ The mechanical facts behind the principles: where these files live, how they loa
 ## AGENTS.md (the cross-tool standard)
 
 - **Format:** plain Markdown, no required schema — "a README for agents." Use whatever headings fit.
-- **Read by:** 20+ agents including OpenAI Codex, Cursor, Gemini CLI, Jules, Aider, GitHub Copilot / VS Code, Zed, Devin, Factory, Warp. (Notably **not** Claude Code — see interop below.)
+- **Read by:** many coding agents; this reference covers **OpenAI Codex**, the one it documents in depth. (Notably **not** Claude Code — see interop below.) Other tools implementing the standard are out of scope here — verify their mechanics against their own docs.
 - **Monorepos:** place an `AGENTS.md` in each package — the root file for repo-wide facts, each nested file for its own package.
 - **Merge & precedence:** don't assume "nearest file wins." Codex **concatenates the whole chain** from the git root down, joined by blank lines, stopping when it reaches your current directory; closer files win only because they land _later_ in the combined prompt. Every level is still in context, so a root-vs-package contradiction is a live conflict the model resolves arbitrarily — it is not cleaned up by proximity (checklist check 8). Codex also loads a global `~/.codex/AGENTS.md` ahead of the project chain, and an `AGENTS.override.md` takes precedence over the `AGENTS.md` beside it at any level. Verified for Codex; other tools implementing the standard differ — confirm before relying on precedence.
 - **Size cap:** Codex stops adding files once the concatenated chain reaches `project_doc_max_bytes` (32 KiB default), so an oversized root file can silently push a package's own instructions out of the prompt entirely. Trim the root or raise the limit. Claude Code has no equivalent cap — it loads the whole chain and you pay in adherence instead.
@@ -56,7 +56,7 @@ paths:
 
 ## Interop: one source of truth, no duplication
 
-Claude Code reads `CLAUDE.md`, not `AGENTS.md`. When a repo already has `AGENTS.md` (for Codex/Cursor/etc.), don't maintain two copies — point one at the other:
+Claude Code reads `CLAUDE.md`, not `AGENTS.md`. When a repo already has `AGENTS.md` for Codex, don't maintain two copies — point one at the other:
 
 **Import (recommended — lets you add Claude-only notes):**
 
@@ -76,4 +76,4 @@ ln -s AGENTS.md CLAUDE.md
 
 (On Windows a symlink needs Administrator/Developer Mode — prefer the `@AGENTS.md` import there.)
 
-Other tools each look for their own file — `.cursorrules` / `.cursor/rules/` (Cursor), `GEMINI.md` (Gemini CLI), `.github/copilot-instructions.md` (Copilot). The same principle holds: keep the substance in one file and have the others import or symlink to it, so a change lands everywhere at once. Running `/init` in a repo that has `AGENTS.md`, `.cursorrules`, `.windsurfrules`, or `.devin/rules/` will read them and fold the relevant parts into the generated `CLAUDE.md`.
+Direction matters: put the substance in `AGENTS.md` and have `CLAUDE.md` import it, not the reverse. Claude Code can import; Codex has no import mechanism, so a Codex-side pointer to `CLAUDE.md` would leave it with only the pointer. With `CLAUDE_CODE_NEW_INIT=1`, `/init` reads an existing `AGENTS.md` and folds the relevant parts into the generated `CLAUDE.md`.
