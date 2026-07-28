@@ -13,9 +13,9 @@ the one for the runtime you are running in:
 
 ## The shape
 
-One **finder** per independent dimension of the diff; *every* finding — minors
+One **finder** per independent dimension of the diff; _every_ finding — minors
 included — is then attacked by an independent **verifier** whose job is to
-*refute* it. Findings of one dimension verify as soon as that dimension's
+_refute_ it. Findings of one dimension verify as soon as that dimension's
 finder is done; nothing waits for the slowest dimension.
 
 ## Why this shape
@@ -44,16 +44,16 @@ Both runtimes exchange the same JSON shapes. A finder returns:
 
 ```json
 {
-  "summary": "one paragraph",
-  "findings": [
-    {
-      "file": "path",
-      "line": 42,
-      "severity": "blocker | major | minor",
-      "title": "one sentence",
-      "evidence": "concrete code/diff lines"
-    }
-  ]
+    "summary": "one paragraph",
+    "findings": [
+        {
+            "file": "path",
+            "line": 42,
+            "severity": "blocker | major | minor",
+            "title": "one sentence",
+            "evidence": "concrete code/diff lines"
+        }
+    ]
 }
 ```
 
@@ -61,9 +61,9 @@ A verifier returns a verdict per finding:
 
 ```json
 {
-  "isReal": true,
-  "reasoning": "what refutation was attempted and why it failed/succeeded",
-  "adjustedSeverity": "blocker | major | minor  (only when re-graded)"
+    "isReal": true,
+    "reasoning": "what refutation was attempted and why it failed/succeeded",
+    "adjustedSeverity": "blocker | major | minor  (only when re-graded)"
 }
 ```
 
@@ -91,7 +91,7 @@ git -C <worktree> show HEAD:<path>, файлы читай по путям вну
 
 Name the worktree path (agents spawn in the orchestrator checkout — without
 `git -C <worktree>` and worktree-relative paths they review the wrong tree),
-the base commit, the claim, and — critically — what is *sanctioned*, so
+the base commit, the claim, and — critically — what is _sanctioned_, so
 verifiers don't re-flag deliberate decisions. State the gate status truthfully:
 in a runtime that backgrounds the gate it runs in parallel; in a synchronous
 runtime it has already finished and its result is known.
@@ -101,14 +101,14 @@ runtime it has already finished and its result is known.
 - **behavioral-equivalence** — the thing that changed still behaves identically.
   When a bridge/mapper is deleted: every silent coercion it did must have an
   explicit replacement (validation, not silent mutation). When a query layer is
-  converted: SQL must be 1:1 — have the agent *compile* `toSQL()` and diff, not
+  converted: SQL must be 1:1 — have the agent _compile_ `toSQL()` and diff, not
   read. Any silent behavior change = major with old-vs-new evidence.
 - **residue** — deletions leave dead exports, stale doc-refs, orphaned barrels,
   dead-code-gate-masked test-only-live modules. Grep the removed symbols;
   confirm the removal is total.
 - **tests-integrity** — migrated tests must not weaken assertions (fixture swap
   only, identical expect counts). Deleted test files must have covered only
-  deleted code, with equivalent coverage relocated. Any changed *expectation*
+  deleted code, with equivalent coverage relocated. Any changed _expectation_
   (not fixture) is a finding.
 - **contract/schema-fidelity** — a generated/derived schema mirrors its source
   field-by-field; a remote contract matches the local one. Have the agent dump

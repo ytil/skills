@@ -1,7 +1,7 @@
 # Gate playbook
 
 This file is the repo-specific half of the skill. The methodology (delegate →
-verify → fix → land) is portable; *what the full gate is and how it fails* is
+verify → fix → land) is portable; _what the full gate is and how it fails_ is
 not. Resolve it once per repo and keep the shape below: **one command, its
 recurring failure modes, and the recovery move for each** — so a red gate is a
 lookup, not an investigation.
@@ -22,7 +22,7 @@ update it) — so the next stage doesn't re-derive it.
 ## Worked instance: pnpm monorepo (prettier / eslint / knip)
 
 The battle-tested instance this skill grew up on. Full gate: `pnpm qa` from the
-repo root — in the verify loop that means the *worktree's* root, not the
+repo root — in the verify loop that means the _worktree's_ root, not the
 orchestrator checkout. Its failure modes recur; know them so a red gate does not stall you:
 
 - **`format:check` red** — you (or an agent) added/edited files without
@@ -43,6 +43,6 @@ orchestrator checkout. Its failure modes recur; know them so a red gate does not
 ## The experiment beats the argument
 
 Prefer verifying a disputed empirical claim (a shim is needed, an export is
-dead) by *doing the experiment* — stash and re-run, `mv` and re-export — over
+dead) by _doing the experiment_ — stash and re-run, `mv` and re-export — over
 reasoning about it. The gate is cheap to run; a wrong belief committed to
 `main` is not.

@@ -26,17 +26,20 @@ the base commit whose message explains context>.
 target is — enough that the agent doesn't reinvent a decision already made>.
 
 ## Порядок работ
+
 1. <first unit>. После КАЖДОГО пункта — <the gate> зелёный.
 2. <next unit>, по одному <entity/module> с зелёными гейтами.
    Если <precondition> не выполнено — СТОП, доложи, НЕ изобретай.
-...
+   ...
 
 ## Что НЕ делать
+
 - <files/layers off-limits this stage — deferred to a later stage>
 - <do not adjust the tests of the thing being ported; a failing core test = a
   finding, STOP and report>
 
 ## Верификация и отчёт
+
 Готово, когда: <the full gate> зелёный; <per-app checks>; <build/export if
 relevant>.
 Отчёт: первой строкой абсолютный путь worktree и base commit; затем <what to
@@ -79,6 +82,7 @@ out-of-scope>.
 
 Common when it hits a model/credit limit or a real STOP. Do not just re-delegate
 blindly:
+
 - If it stopped on a genuine STOP condition, **make the decision** (that's your
   job) and write a short continuation prompt that states the decision and resumes.
 - If it stopped on a limit mid-edit, the tree may have an unfinished edit — read

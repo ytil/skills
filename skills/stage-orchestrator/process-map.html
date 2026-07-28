@@ -1,769 +1,1684 @@
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <title>Stage Orchestrator — карта процесса</title>
 <style>
-  :root {
-    --ground: #f4f6f2;
-    --surface: #ffffff;
-    --ink: #212a28;
-    --muted: #5d6b67;
-    --hairline: #d7ddd7;
-    --main: #0e6e63;      /* бирюзовая дорожка — main / оркестратор */
-    --main-soft: #e3efec;
-    --wt: #b0611d;        /* медная дорожка — worktree / внешний агент */
-    --wt-soft: #f6ead9;
-    --ok: #2f7d46;
-    --ok-soft: #e2efe4;
-    --bad: #b23a36;
-    --bad-soft: #f5e3e1;
-    --code-bg: #ebefe9;
-  }
-  @media (prefers-color-scheme: dark) {
     :root {
-      --ground: #151a19;
-      --surface: #1e2523;
-      --ink: #e6ebe7;
-      --muted: #96a49e;
-      --hairline: #333d39;
-      --main: #43b3a2;
-      --main-soft: #1c322e;
-      --wt: #d99049;
-      --wt-soft: #362a1c;
-      --ok: #63b578;
-      --ok-soft: #21332a;
-      --bad: #d97d76;
-      --bad-soft: #3a2523;
-      --code-bg: #29312d;
+        --ground: #f4f6f2;
+        --surface: #ffffff;
+        --ink: #212a28;
+        --muted: #5d6b67;
+        --hairline: #d7ddd7;
+        --main: #0e6e63; /* бирюзовая дорожка — main / оркестратор */
+        --main-soft: #e3efec;
+        --wt: #b0611d; /* медная дорожка — worktree / внешний агент */
+        --wt-soft: #f6ead9;
+        --ok: #2f7d46;
+        --ok-soft: #e2efe4;
+        --bad: #b23a36;
+        --bad-soft: #f5e3e1;
+        --code-bg: #ebefe9;
     }
-  }
-  :root[data-theme="light"] {
-    --ground: #f4f6f2; --surface: #ffffff; --ink: #212a28; --muted: #5d6b67;
-    --hairline: #d7ddd7; --main: #0e6e63; --main-soft: #e3efec;
-    --wt: #b0611d; --wt-soft: #f6ead9; --ok: #2f7d46; --ok-soft: #e2efe4;
-    --bad: #b23a36; --bad-soft: #f5e3e1; --code-bg: #ebefe9;
-  }
-  :root[data-theme="dark"] {
-    --ground: #151a19; --surface: #1e2523; --ink: #e6ebe7; --muted: #96a49e;
-    --hairline: #333d39; --main: #43b3a2; --main-soft: #1c322e;
-    --wt: #d99049; --wt-soft: #362a1c; --ok: #63b578; --ok-soft: #21332a;
-    --bad: #d97d76; --bad-soft: #3a2523; --code-bg: #29312d;
-  }
-
-  html { background: var(--ground); }
-  body {
-    margin: 0;
-    color: var(--ink);
-    font-family: Charter, Georgia, "Times New Roman", serif;
-    font-size: 16px;
-    line-height: 1.55;
-  }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px 80px; }
-
-  .mono, code, .chip, .eyebrow, .lane-tag, .step-no, .pill {
-    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-  }
-  code {
-    background: var(--code-bg);
-    padding: 1px 6px;
-    border-radius: 3px;
-    font-size: 0.82em;
-    white-space: nowrap;
-  }
-  h1, h2, h3 { text-wrap: balance; margin: 0; }
-  p { margin: 0; }
-  a { color: var(--main); }
-
-  /* ---------- header ---------- */
-  .eyebrow {
-    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 14px;
-  }
-  .eyebrow b { color: var(--main); font-weight: 600; }
-  header h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.12; font-weight: 700; }
-  header .lede {
-    margin-top: 16px; max-width: 62ch; color: var(--muted); font-size: 17px;
-  }
-  header .lede strong { color: var(--ink); font-weight: 600; }
-
-  .modes { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
-  .mode {
-    flex: 1 1 260px; background: var(--surface); border: 1px solid var(--hairline);
-    border-radius: 4px; padding: 14px 16px;
-  }
-  .mode .chip { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
-  .mode.author .chip { color: var(--main); }
-  .mode.verify .chip { color: var(--wt); }
-  .mode p { margin-top: 6px; font-size: 14.5px; color: var(--muted); }
-
-  /* ---------- rhythm strip ---------- */
-  .rhythm {
-    margin-top: 36px; background: var(--surface); border: 1px solid var(--hairline);
-    border-radius: 4px; padding: 18px 20px;
-  }
-  .rhythm .label { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
-  .rhythm-row {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px;
-  }
-  .pill {
-    border: 1px solid var(--hairline); border-radius: 999px; padding: 5px 14px;
-    font-size: 13px; background: var(--ground); white-space: nowrap;
-  }
-  .pill.git { border-color: var(--main); color: var(--main); font-weight: 600; }
-  .pill.loop { border-style: dashed; color: var(--muted); }
-  .rhythm-row .arr { color: var(--muted); font-size: 14px; }
-  .rhythm p.note { margin-top: 12px; font-size: 14px; color: var(--muted); max-width: 70ch; }
-
-  /* ---------- section headers ---------- */
-  section { margin-top: 56px; }
-  .sec-head { display: flex; align-items: baseline; gap: 14px; border-bottom: 1px solid var(--hairline); padding-bottom: 10px; }
-  .sec-head h2 { font-size: 24px; font-weight: 700; }
-  .sec-head .chip { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-  .sec-sub { margin-top: 10px; color: var(--muted); font-size: 15px; max-width: 72ch; }
-
-  /* ---------- swimlane diagram ---------- */
-  .lane-heads {
-    display: grid; grid-template-columns: 1fr 76px 1fr; gap: 0 16px;
-    margin-top: 26px;
-  }
-  .lane-tag {
-    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;
-    padding-bottom: 10px;
-  }
-  .lane-tag.l-main { color: var(--main); text-align: right; }
-  .lane-tag.l-wt { color: var(--wt); }
-
-  .flow { display: grid; grid-template-columns: 1fr 76px 1fr; gap: 0 16px; }
-  .cell { min-height: 10px; padding-bottom: 18px; }
-  .rail { position: relative; padding-bottom: 0; }
-  .rail .ln { position: absolute; top: 0; bottom: 0; width: 2px; }
-  .rail .ln.m { left: 24px; background: var(--main); }
-  .rail .ln.w { left: 50px; background: var(--wt); }
-  .rail .ln.half-top { bottom: auto; height: 24px; }
-  .rail .dot {
-    position: absolute; width: 10px; height: 10px; border-radius: 50%;
-    top: 20px; box-shadow: 0 0 0 3px var(--ground);
-  }
-  .rail .dot.m { left: 20px; background: var(--main); }
-  .rail .dot.w { left: 46px; background: var(--wt); }
-  .rail svg { display: block; }
-
-  .node {
-    background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px;
-    padding: 13px 16px 14px;
-  }
-  .node.on-main { border-left: 3px solid var(--main); }
-  .node.on-wt { border-left: 3px solid var(--wt); }
-  .node .step-no { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--muted); }
-  .node.on-main .step-no { color: var(--main); }
-  .node.on-wt .step-no { color: var(--wt); }
-  .node h3 { font-size: 16.5px; margin-top: 3px; font-weight: 700; }
-  .node p { margin-top: 6px; font-size: 14px; color: var(--muted); }
-  .node p strong { color: var(--ink); }
-  .node ul { margin: 8px 0 0; padding-left: 18px; font-size: 14px; color: var(--muted); }
-  .node li { margin-top: 4px; }
-  .node li::marker { color: var(--hairline); }
-  .node li strong { color: var(--ink); }
-  .node .ref { display: block; margin-top: 9px; font-size: 12.5px; color: var(--muted); }
-
-  .side-note {
-    font-size: 13.5px; color: var(--muted); padding: 6px 2px 0;
-    max-width: 34ch;
-  }
-  .side-note.right { text-align: left; }
-  .side-note.left { text-align: right; margin-left: auto; }
-
-  .branch-label {
-    font-size: 12.5px; letter-spacing: 0.02em;
-    color: var(--muted); padding-top: 12px;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  }
-  .branch-label.to-wt { text-align: left; }
-  .branch-label.to-main { text-align: right; }
-
-  .fork {
-    background: var(--surface); border: 1px dashed var(--hairline); border-radius: 4px;
-    padding: 13px 16px 14px;
-  }
-  .fork h3 { font-size: 15.5px; }
-  .fork .out { display: flex; gap: 8px; margin-top: 9px; align-items: baseline; font-size: 14px; }
-  .fork .tag { flex: none; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 3px;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-  .fork .tag.yes { background: var(--ok-soft); color: var(--ok); }
-  .fork .tag.no { background: var(--bad-soft); color: var(--bad); }
-  .fork .out p { color: var(--muted); }
-
-  .loop-back {
-    grid-column: 1 / -1; text-align: center; padding: 4px 0 0;
-    font-size: 13px; color: var(--muted);
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  }
-
-  /* ---------- review pipeline ---------- */
-  .pipe { margin-top: 26px; overflow-x: auto; padding-bottom: 6px; }
-  .pipe-inner { display: flex; align-items: stretch; gap: 0; min-width: 820px; }
-  .stage-col { flex: 1 1 0; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
-  .stage-col > .st-label {
-    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;
-    color: var(--muted); margin-bottom: 4px;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  }
-  .box {
-    background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px;
-    padding: 10px 12px; font-size: 13.5px;
-  }
-  .box .t { font-weight: 700; font-size: 13px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-  .box p { color: var(--muted); margin-top: 3px; font-size: 13px; }
-  .box.dim .t { color: var(--main); }
-  .box.verd-ok { border-left: 3px solid var(--ok); }
-  .box.verd-bad { border-left: 3px solid var(--bad); }
-  .box.common { border-left: 3px solid var(--main); }
-  .pipe-arrow {
-    flex: 0 0 44px; display: flex; align-items: center; justify-content: center;
-    color: var(--muted); font-size: 18px;
-  }
-  .pipe-note { margin-top: 14px; font-size: 14px; color: var(--muted); max-width: 76ch; }
-  .pipe-note strong { color: var(--ink); }
-
-  /* ---------- principles ---------- */
-  .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; }
-  .prin {
-    background: var(--surface); border: 1px solid var(--hairline); border-top: 3px solid var(--main);
-    border-radius: 4px; padding: 16px;
-  }
-  .prin .num { font-size: 12px; color: var(--main); font-weight: 700; letter-spacing: 0.1em;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-  .prin h3 { font-size: 16px; margin-top: 6px; }
-  .prin p { margin-top: 8px; font-size: 14px; color: var(--muted); }
-  .prin p strong { color: var(--ink); }
-
-  /* ---------- closing audit ---------- */
-  .close-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
-  .close-grid .rule .num {
-    font-size: 12px; color: var(--main); font-weight: 700; letter-spacing: 0.1em;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    display: block; margin-bottom: 4px;
-  }
-  .dims { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .dims span {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 11.5px; color: var(--main); background: var(--main-soft);
-    border-radius: 3px; padding: 2px 8px;
-  }
-
-  /* ---------- runtime split ---------- */
-  .rt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
-  .rt {
-    background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px;
-    padding: 13px 16px;
-  }
-  .rt .chip { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
-  .rt.claude { border-top: 3px solid var(--main); } .rt.claude .chip { color: var(--main); }
-  .rt.codex { border-top: 3px solid var(--wt); } .rt.codex .chip { color: var(--wt); }
-  .rt p { margin-top: 6px; font-size: 14px; color: var(--muted); }
-  .rt p strong { color: var(--ink); }
-
-  /* ---------- parallel ---------- */
-  .par-grid { display: grid; grid-template-columns: 220px 1fr; gap: 20px; margin-top: 24px; align-items: start; }
-  .par-fig { background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px; padding: 14px; }
-  .par-fig svg { display: block; width: 100%; height: auto; }
-  .par-rules { display: flex; flex-direction: column; gap: 12px; }
-  .rule { background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px; padding: 12px 15px; font-size: 14px; }
-  .rule b { display: block; font-size: 14.5px; }
-  .rule span { color: var(--muted); }
-
-  /* ---------- scaling table ---------- */
-  .scale { margin-top: 24px; overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px; font-size: 14px; }
-  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
-  th { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-  tr:last-child td { border-bottom: none; }
-  td:first-child { font-weight: 700; white-space: nowrap; }
-  td { color: var(--muted); } td:first-child { color: var(--ink); }
-
-  /* ---------- files footer ---------- */
-  .files { margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .file { background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px; padding: 12px 14px; font-size: 13px; }
-  .file .fn { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-weight: 700; font-size: 12.5px; color: var(--main); word-break: break-word; }
-  .file p { color: var(--muted); margin-top: 4px; font-size: 13px; }
-
-  footer { margin-top: 60px; border-top: 1px solid var(--hairline); padding-top: 16px;
-    font-size: 13px; color: var(--muted); }
-
-  /* ---------- responsive ---------- */
-  @media (max-width: 760px) {
-    .flow, .lane-heads { grid-template-columns: 1fr; }
-    .rail, .lane-tag { display: none; }
-    .side-note { max-width: none; text-align: left; padding: 0 2px 14px; }
-    .side-note.left { margin-left: 0; text-align: left; }
-    .branch-label { padding: 2px 0 14px; text-align: left !important; }
-    .node::before {
-      content: attr(data-lane);
-      display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
-      text-transform: uppercase; padding: 1px 7px; border-radius: 3px; margin-bottom: 7px;
-      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --ground: #151a19;
+            --surface: #1e2523;
+            --ink: #e6ebe7;
+            --muted: #96a49e;
+            --hairline: #333d39;
+            --main: #43b3a2;
+            --main-soft: #1c322e;
+            --wt: #d99049;
+            --wt-soft: #362a1c;
+            --ok: #63b578;
+            --ok-soft: #21332a;
+            --bad: #d97d76;
+            --bad-soft: #3a2523;
+            --code-bg: #29312d;
+        }
     }
-    .node.on-main::before { background: var(--main-soft); color: var(--main); }
-    .node.on-wt::before { background: var(--wt-soft); color: var(--wt); }
-    .principles { grid-template-columns: 1fr; }
-    .par-grid { grid-template-columns: 1fr; }
-    .close-grid, .rt-grid { grid-template-columns: 1fr; }
-    .files { grid-template-columns: 1fr 1fr; }
-  }
+    :root[data-theme="light"] {
+        --ground: #f4f6f2;
+        --surface: #ffffff;
+        --ink: #212a28;
+        --muted: #5d6b67;
+        --hairline: #d7ddd7;
+        --main: #0e6e63;
+        --main-soft: #e3efec;
+        --wt: #b0611d;
+        --wt-soft: #f6ead9;
+        --ok: #2f7d46;
+        --ok-soft: #e2efe4;
+        --bad: #b23a36;
+        --bad-soft: #f5e3e1;
+        --code-bg: #ebefe9;
+    }
+    :root[data-theme="dark"] {
+        --ground: #151a19;
+        --surface: #1e2523;
+        --ink: #e6ebe7;
+        --muted: #96a49e;
+        --hairline: #333d39;
+        --main: #43b3a2;
+        --main-soft: #1c322e;
+        --wt: #d99049;
+        --wt-soft: #362a1c;
+        --ok: #63b578;
+        --ok-soft: #21332a;
+        --bad: #d97d76;
+        --bad-soft: #3a2523;
+        --code-bg: #29312d;
+    }
+
+    html {
+        background: var(--ground);
+    }
+    body {
+        margin: 0;
+        color: var(--ink);
+        font-family: Charter, Georgia, "Times New Roman", serif;
+        font-size: 16px;
+        line-height: 1.55;
+    }
+    .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+    }
+
+    .mono,
+    code,
+    .chip,
+    .eyebrow,
+    .lane-tag,
+    .step-no,
+    .pill {
+        font-family:
+            ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    code {
+        background: var(--code-bg);
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 0.82em;
+        white-space: nowrap;
+    }
+    h1,
+    h2,
+    h3 {
+        text-wrap: balance;
+        margin: 0;
+    }
+    p {
+        margin: 0;
+    }
+    a {
+        color: var(--main);
+    }
+
+    /* ---------- header ---------- */
+    .eyebrow {
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 14px;
+    }
+    .eyebrow b {
+        color: var(--main);
+        font-weight: 600;
+    }
+    header h1 {
+        font-size: clamp(30px, 5vw, 44px);
+        line-height: 1.12;
+        font-weight: 700;
+    }
+    header .lede {
+        margin-top: 16px;
+        max-width: 62ch;
+        color: var(--muted);
+        font-size: 17px;
+    }
+    header .lede strong {
+        color: var(--ink);
+        font-weight: 600;
+    }
+
+    .modes {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+        flex-wrap: wrap;
+    }
+    .mode {
+        flex: 1 1 260px;
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-radius: 4px;
+        padding: 14px 16px;
+    }
+    .mode .chip {
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+    .mode.author .chip {
+        color: var(--main);
+    }
+    .mode.verify .chip {
+        color: var(--wt);
+    }
+    .mode p {
+        margin-top: 6px;
+        font-size: 14.5px;
+        color: var(--muted);
+    }
+
+    /* ---------- rhythm strip ---------- */
+    .rhythm {
+        margin-top: 36px;
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-radius: 4px;
+        padding: 18px 20px;
+    }
+    .rhythm .label {
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+    .rhythm-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+    .pill {
+        border: 1px solid var(--hairline);
+        border-radius: 999px;
+        padding: 5px 14px;
+        font-size: 13px;
+        background: var(--ground);
+        white-space: nowrap;
+    }
+    .pill.git {
+        border-color: var(--main);
+        color: var(--main);
+        font-weight: 600;
+    }
+    .pill.loop {
+        border-style: dashed;
+        color: var(--muted);
+    }
+    .rhythm-row .arr {
+        color: var(--muted);
+        font-size: 14px;
+    }
+    .rhythm p.note {
+        margin-top: 12px;
+        font-size: 14px;
+        color: var(--muted);
+        max-width: 70ch;
+    }
+
+    /* ---------- section headers ---------- */
+    section {
+        margin-top: 56px;
+    }
+    .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        border-bottom: 1px solid var(--hairline);
+        padding-bottom: 10px;
+    }
+    .sec-head h2 {
+        font-size: 24px;
+        font-weight: 700;
+    }
+    .sec-head .chip {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+    .sec-sub {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 15px;
+        max-width: 72ch;
+    }
+
+    /* ---------- swimlane diagram ---------- */
+    .lane-heads {
+        display: grid;
+        grid-template-columns: 1fr 76px 1fr;
+        gap: 0 16px;
+        margin-top: 26px;
+    }
+    .lane-tag {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 700;
+        padding-bottom: 10px;
+    }
+    .lane-tag.l-main {
+        color: var(--main);
+        text-align: right;
+    }
+    .lane-tag.l-wt {
+        color: var(--wt);
+    }
+
+    .flow {
+        display: grid;
+        grid-template-columns: 1fr 76px 1fr;
+        gap: 0 16px;
+    }
+    .cell {
+        min-height: 10px;
+        padding-bottom: 18px;
+    }
+    .rail {
+        position: relative;
+        padding-bottom: 0;
+    }
+    .rail .ln {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+    }
+    .rail .ln.m {
+        left: 24px;
+        background: var(--main);
+    }
+    .rail .ln.w {
+        left: 50px;
+        background: var(--wt);
+    }
+    .rail .ln.half-top {
+        bottom: auto;
+        height: 24px;
+    }
+    .rail .dot {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        top: 20px;
+        box-shadow: 0 0 0 3px var(--ground);
+    }
+    .rail .dot.m {
+        left: 20px;
+        background: var(--main);
+    }
+    .rail .dot.w {
+        left: 46px;
+        background: var(--wt);
+    }
+    .rail svg {
+        display: block;
+    }
+
+    .node {
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-radius: 4px;
+        padding: 13px 16px 14px;
+    }
+    .node.on-main {
+        border-left: 3px solid var(--main);
+    }
+    .node.on-wt {
+        border-left: 3px solid var(--wt);
+    }
+    .node .step-no {
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--muted);
+    }
+    .node.on-main .step-no {
+        color: var(--main);
+    }
+    .node.on-wt .step-no {
+        color: var(--wt);
+    }
+    .node h3 {
+        font-size: 16.5px;
+        margin-top: 3px;
+        font-weight: 700;
+    }
+    .node p {
+        margin-top: 6px;
+        font-size: 14px;
+        color: var(--muted);
+    }
+    .node p strong {
+        color: var(--ink);
+    }
+    .node ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 14px;
+        color: var(--muted);
+    }
+    .node li {
+        margin-top: 4px;
+    }
+    .node li::marker {
+        color: var(--hairline);
+    }
+    .node li strong {
+        color: var(--ink);
+    }
+    .node .ref {
+        display: block;
+        margin-top: 9px;
+        font-size: 12.5px;
+        color: var(--muted);
+    }
+
+    .side-note {
+        font-size: 13.5px;
+        color: var(--muted);
+        padding: 6px 2px 0;
+        max-width: 34ch;
+    }
+    .side-note.right {
+        text-align: left;
+    }
+    .side-note.left {
+        text-align: right;
+        margin-left: auto;
+    }
+
+    .branch-label {
+        font-size: 12.5px;
+        letter-spacing: 0.02em;
+        color: var(--muted);
+        padding-top: 12px;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    .branch-label.to-wt {
+        text-align: left;
+    }
+    .branch-label.to-main {
+        text-align: right;
+    }
+
+    .fork {
+        background: var(--surface);
+        border: 1px dashed var(--hairline);
+        border-radius: 4px;
+        padding: 13px 16px 14px;
+    }
+    .fork h3 {
+        font-size: 15.5px;
+    }
+    .fork .out {
+        display: flex;
+        gap: 8px;
+        margin-top: 9px;
+        align-items: baseline;
+        font-size: 14px;
+    }
+    .fork .tag {
+        flex: none;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    .fork .tag.yes {
+        background: var(--ok-soft);
+        color: var(--ok);
+    }
+    .fork .tag.no {
+        background: var(--bad-soft);
+        color: var(--bad);
+    }
+    .fork .out p {
+        color: var(--muted);
+    }
+
+    .loop-back {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 4px 0 0;
+        font-size: 13px;
+        color: var(--muted);
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+
+    /* ---------- review pipeline ---------- */
+    .pipe {
+        margin-top: 26px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+    }
+    .pipe-inner {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        min-width: 820px;
+    }
+    .stage-col {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        justify-content: center;
+    }
+    .stage-col > .st-label {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--muted);
+        margin-bottom: 4px;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    .box {
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-radius: 4px;
+        padding: 10px 12px;
+        font-size: 13.5px;
+    }
+    .box .t {
+        font-weight: 700;
+        font-size: 13px;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    .box p {
+        color: var(--muted);
+        margin-top: 3px;
+        font-size: 13px;
+    }
+    .box.dim .t {
+        color: var(--main);
+    }
+    .box.verd-ok {
+        border-left: 3px solid var(--ok);
+    }
+    .box.verd-bad {
+        border-left: 3px solid var(--bad);
+    }
+    .box.common {
+        border-left: 3px solid var(--main);
+    }
+    .pipe-arrow {
+        flex: 0 0 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        font-size: 18px;
+    }
+    .pipe-note {
+        margin-top: 14px;
+        font-size: 14px;
+        color: var(--muted);
+        max-width: 76ch;
+    }
+    .pipe-note strong {
+        color: var(--ink);
+    }
+
+    /* ---------- principles ---------- */
+    .principles {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 24px;
+    }
+    .prin {
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-top: 3px solid var(--main);
+        border-radius: 4px;
+        padding: 16px;
+    }
+    .prin .num {
+        font-size: 12px;
+        color: var(--main);
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    .prin h3 {
+        font-size: 16px;
+        margin-top: 6px;
+    }
+    .prin p {
+        margin-top: 8px;
+        font-size: 14px;
+        color: var(--muted);
+    }
+    .prin p strong {
+        color: var(--ink);
+    }
+
+    /* ---------- closing audit ---------- */
+    .close-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 24px;
+    }
+    .close-grid .rule .num {
+        font-size: 12px;
+        color: var(--main);
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        display: block;
+        margin-bottom: 4px;
+    }
+    .dims {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    .dims span {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 11.5px;
+        color: var(--main);
+        background: var(--main-soft);
+        border-radius: 3px;
+        padding: 2px 8px;
+    }
+
+    /* ---------- runtime split ---------- */
+    .rt-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 18px;
+    }
+    .rt {
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-radius: 4px;
+        padding: 13px 16px;
+    }
+    .rt .chip {
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+    .rt.claude {
+        border-top: 3px solid var(--main);
+    }
+    .rt.claude .chip {
+        color: var(--main);
+    }
+    .rt.codex {
+        border-top: 3px solid var(--wt);
+    }
+    .rt.codex .chip {
+        color: var(--wt);
+    }
+    .rt p {
+        margin-top: 6px;
+        font-size: 14px;
+        color: var(--muted);
+    }
+    .rt p strong {
+        color: var(--ink);
+    }
+
+    /* ---------- parallel ---------- */
+    .par-grid {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 20px;
+        margin-top: 24px;
+        align-items: start;
+    }
+    .par-fig {
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-radius: 4px;
+        padding: 14px;
+    }
+    .par-fig svg {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+    .par-rules {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .rule {
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-radius: 4px;
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+    .rule b {
+        display: block;
+        font-size: 14.5px;
+    }
+    .rule span {
+        color: var(--muted);
+    }
+
+    /* ---------- scaling table ---------- */
+    .scale {
+        margin-top: 24px;
+        overflow-x: auto;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    th,
+    td {
+        text-align: left;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--hairline);
+        vertical-align: top;
+    }
+    th {
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    tr:last-child td {
+        border-bottom: none;
+    }
+    td:first-child {
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    td {
+        color: var(--muted);
+    }
+    td:first-child {
+        color: var(--ink);
+    }
+
+    /* ---------- files footer ---------- */
+    .files {
+        margin-top: 24px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+    .file {
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-radius: 4px;
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+    .file .fn {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-weight: 700;
+        font-size: 12.5px;
+        color: var(--main);
+        word-break: break-word;
+    }
+    .file p {
+        color: var(--muted);
+        margin-top: 4px;
+        font-size: 13px;
+    }
+
+    footer {
+        margin-top: 60px;
+        border-top: 1px solid var(--hairline);
+        padding-top: 16px;
+        font-size: 13px;
+        color: var(--muted);
+    }
+
+    /* ---------- responsive ---------- */
+    @media (max-width: 760px) {
+        .flow,
+        .lane-heads {
+            grid-template-columns: 1fr;
+        }
+        .rail,
+        .lane-tag {
+            display: none;
+        }
+        .side-note {
+            max-width: none;
+            text-align: left;
+            padding: 0 2px 14px;
+        }
+        .side-note.left {
+            margin-left: 0;
+            text-align: left;
+        }
+        .branch-label {
+            padding: 2px 0 14px;
+            text-align: left !important;
+        }
+        .node::before {
+            content: attr(data-lane);
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 1px 7px;
+            border-radius: 3px;
+            margin-bottom: 7px;
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        }
+        .node.on-main::before {
+            background: var(--main-soft);
+            color: var(--main);
+        }
+        .node.on-wt::before {
+            background: var(--wt-soft);
+            color: var(--wt);
+        }
+        .principles {
+            grid-template-columns: 1fr;
+        }
+        .par-grid {
+            grid-template-columns: 1fr;
+        }
+        .close-grid,
+        .rt-grid {
+            grid-template-columns: 1fr;
+        }
+        .files {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
 </style>
 
 <div class="wrap">
+    <header>
+        <div class="eyebrow">
+            skill · <b>stage-orchestrator</b> · карта процесса
+        </div>
+        <h1>Делегируй. Проверяй. Приземляй.</h1>
+        <p class="lede">
+            Оркестратор долгой многоэтапной работы не пишет код сам — этапы
+            выполняет внешний агент. Скилл делает такое делегирование
+            безопасным:
+            <strong
+                >промпт этапа настолько точен, что работа возвращается
+                правильной, а проверка настолько строга, что результат не
+                страшно класть в <code>main</code></strong
+            >. Внешний агент способный, но заявляет больше, чем сделал, молча
+            меняет поведение и, упёршись в лимит, останавливается без доклада.
+            Опора оркестратора — скептицизм и проверяемые машиной
+            доказательства.
+        </p>
 
-  <header>
-    <div class="eyebrow">skill · <b>stage-orchestrator</b> · карта процесса</div>
-    <h1>Делегируй. Проверяй. Приземляй.</h1>
-    <p class="lede">Оркестратор долгой многоэтапной работы не пишет код сам —
-      этапы выполняет внешний агент. Скилл делает такое делегирование безопасным:
-      <strong>промпт этапа настолько точен, что работа возвращается правильной,
-      а проверка настолько строга, что результат не страшно класть в <code>main</code></strong>.
-      Внешний агент способный, но заявляет больше, чем сделал, молча меняет поведение
-      и, упёршись в лимит, останавливается без доклада. Опора оркестратора —
-      скептицизм и проверяемые машиной доказательства.</p>
+        <div class="modes">
+            <div class="mode author">
+                <span class="chip">Режим 1 · Автор</span>
+                <p>
+                    Предстоит поручить этап: синхронизироваться с remote и
+                    написать самодостаточный промпт этапа с обязательным
+                    worktree.
+                </p>
+            </div>
+            <div class="mode verify">
+                <span class="chip">Режим 2 · Проверка</span>
+                <p>
+                    Пришёл отчёт: до коммита доказать его или опровергнуть. Это
+                    главный режим — отчёт лишь заявление, а не доказательство.
+                </p>
+            </div>
+        </div>
+    </header>
 
-    <div class="modes">
-      <div class="mode author">
-        <span class="chip">Режим 1 · Автор</span>
-        <p>Предстоит поручить этап: синхронизироваться с remote и написать
-          самодостаточный промпт этапа с обязательным worktree.</p>
-      </div>
-      <div class="mode verify">
-        <span class="chip">Режим 2 · Проверка</span>
-        <p>Пришёл отчёт: до коммита доказать его или опровергнуть. Это главный режим —
-          отчёт лишь заявление, а не доказательство.</p>
-      </div>
+    <div class="rhythm">
+        <span class="label">Ритм итерации</span>
+        <div class="rhythm-row">
+            <span class="pill git">git pull</span><span class="arr">→</span>
+            <span class="pill">поручить этап</span><span class="arr">→</span>
+            <span class="pill">проверить</span><span class="arr">→</span>
+            <span class="pill">приземлить</span><span class="arr">→</span>
+            <span class="pill git">git push</span><span class="arr">→</span>
+            <span class="pill loop">↻ следующий этап</span>
+        </div>
+        <p class="note">
+            Pull и push забываются легче всего, и у каждого пропуска своя цена:
+            устаревшая база оборачивается merge-конфликтами при приземлении, а
+            незапушенный этап невидим для CI и для всех, кто работает от remote.
+            Когда приземлён последний этап — это ещё не «готово»: впереди
+            финальный аудит приёмки (внизу страницы).
+        </p>
     </div>
-  </header>
 
-  <div class="rhythm">
-    <span class="label">Ритм итерации</span>
-    <div class="rhythm-row">
-      <span class="pill git">git pull</span><span class="arr">→</span>
-      <span class="pill">поручить этап</span><span class="arr">→</span>
-      <span class="pill">проверить</span><span class="arr">→</span>
-      <span class="pill">приземлить</span><span class="arr">→</span>
-      <span class="pill git">git push</span><span class="arr">→</span>
-      <span class="pill loop">↻ следующий этап</span>
-    </div>
-    <p class="note">Pull и push забываются легче всего, и у каждого пропуска своя цена:
-      устаревшая база оборачивается merge-конфликтами при приземлении, а незапушенный
-      этап невидим для CI и для всех, кто работает от remote. Когда приземлён последний
-      этап — это ещё не «готово»: впереди финальный аудит приёмки (внизу страницы).</p>
-  </div>
-
-  <!-- ================= main flow ================= -->
-  <section>
-    <div class="sec-head"><h2>Один этап: от pull до push</h2><span class="chip">две дорожки</span></div>
-    <p class="sec-sub">Слева, бирюзовым — ветка <code>main</code> и действия оркестратора.
-      Справа, медным — отдельный worktree, в котором работает внешний агент.
-      Медная ветка ответвляется в момент поручения этапа и вливается обратно
-      только после полной проверки.</p>
-
-    <div class="lane-heads">
-      <span class="lane-tag l-main">main · оркестратор</span>
-      <span></span>
-      <span class="lane-tag l-wt">worktree · внешний агент</span>
-    </div>
-
-    <div class="flow">
-
-      <!-- 1. git pull -->
-      <div class="cell">
-        <div class="node on-main" data-lane="main · оркестратор">
-          <span class="step-no">Шаг 1 · Синхронизация</span>
-          <h3>Подтянуть remote</h3>
-          <p><code>git pull</code> целевой ветки до написания промпта. Удалённая ветка
-            могла уйти вперёд, а этап, начатый от устаревшей базы, расплатится за это
-            конфликтами при приземлении.</p>
+    <!-- ================= main flow ================= -->
+    <section>
+        <div class="sec-head">
+            <h2>Один этап: от pull до push</h2>
+            <span class="chip">две дорожки</span>
         </div>
-      </div>
-      <div class="cell rail"><span class="ln m"></span><span class="dot m"></span></div>
-      <div class="cell"></div>
+        <p class="sec-sub">
+            Слева, бирюзовым — ветка <code>main</code> и действия оркестратора.
+            Справа, медным — отдельный worktree, в котором работает внешний
+            агент. Медная ветка ответвляется в момент поручения этапа и
+            вливается обратно только после полной проверки.
+        </p>
 
-      <!-- 2. author -->
-      <div class="cell">
-        <div class="node on-main" data-lane="main · оркестратор">
-          <span class="step-no">Шаг 2 · Промпт этапа</span>
-          <h3>Промпт — это весь контракт</h3>
-          <ul>
-            <li><strong>Что прочитать заранее</strong> — точными ссылками: разделы плана, файлы-образцы.</li>
-            <li><strong>Порядок работ</strong>: по одной сущности за раз, полный набор проверок зелёный после каждого пункта.</li>
-            <li><strong>Условия остановки</strong> вместо догадок: наткнулся на непредусмотренное — остановись и доложи, не выдумывай.</li>
-            <li><strong>Чего не делать</strong>: файлы и работы, отложенные на следующие этапы, названы явно.</li>
-            <li><strong>Отчёт в проверяемом виде</strong>: что нельзя проверить grep-ом, тому нельзя и верить.</li>
-          </ul>
-          <span class="ref">→ references/stage-prompt.md</span>
+        <div class="lane-heads">
+            <span class="lane-tag l-main">main · оркестратор</span>
+            <span></span>
+            <span class="lane-tag l-wt">worktree · внешний агент</span>
         </div>
-      </div>
-      <div class="cell rail"><span class="ln m"></span><span class="dot m"></span></div>
-      <div class="cell"><p class="side-note right">Контракт worktree: агент обязан создать
-        отдельный <code>git worktree</code>, править только в нём и первой строкой отчёта
-        назвать его абсолютный путь. Если создать worktree не удалось — остановиться и доложить.</p></div>
 
-      <!-- branch -->
-      <div class="cell"></div>
-      <div class="cell rail" style="height:52px">
-        <svg width="76" height="52" viewBox="0 0 76 52" aria-hidden="true">
-          <line x1="25" y1="0" x2="25" y2="52" stroke="var(--main)" stroke-width="2"/>
-          <path d="M25,6 C25,38 51,18 51,52" fill="none" stroke="var(--wt)" stroke-width="2"/>
-        </svg>
-      </div>
-      <div class="cell"><div class="branch-label to-wt">git worktree add --detach</div></div>
+        <div class="flow">
+            <!-- 1. git pull -->
+            <div class="cell">
+                <div class="node on-main" data-lane="main · оркестратор">
+                    <span class="step-no">Шаг 1 · Синхронизация</span>
+                    <h3>Подтянуть remote</h3>
+                    <p>
+                        <code>git pull</code> целевой ветки до написания
+                        промпта. Удалённая ветка могла уйти вперёд, а этап,
+                        начатый от устаревшей базы, расплатится за это
+                        конфликтами при приземлении.
+                    </p>
+                </div>
+            </div>
+            <div class="cell rail">
+                <span class="ln m"></span><span class="dot m"></span>
+            </div>
+            <div class="cell"></div>
 
-      <!-- 3. implement -->
-      <div class="cell"></div>
-      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span><span class="dot w"></span></div>
-      <div class="cell">
-        <div class="node on-wt" data-lane="worktree · агент">
-          <span class="step-no">Шаг 3 · Реализация</span>
-          <h3>Агент выполняет этап</h3>
-          <p>Все правки — только внутри worktree, без веток и коммитов. Проверки зелёные
-            после каждого пункта плана; если условие плана не выполняется — остановка и
-            доклад, а не правдоподобная выдумка. Большой этап можно сдать частично:
-            зелёный кусок плюс список того, что осталось.</p>
+            <!-- 2. author -->
+            <div class="cell">
+                <div class="node on-main" data-lane="main · оркестратор">
+                    <span class="step-no">Шаг 2 · Промпт этапа</span>
+                    <h3>Промпт — это весь контракт</h3>
+                    <ul>
+                        <li>
+                            <strong>Что прочитать заранее</strong> — точными
+                            ссылками: разделы плана, файлы-образцы.
+                        </li>
+                        <li>
+                            <strong>Порядок работ</strong>: по одной сущности за
+                            раз, полный набор проверок зелёный после каждого
+                            пункта.
+                        </li>
+                        <li>
+                            <strong>Условия остановки</strong> вместо догадок:
+                            наткнулся на непредусмотренное — остановись и
+                            доложи, не выдумывай.
+                        </li>
+                        <li>
+                            <strong>Чего не делать</strong>: файлы и работы,
+                            отложенные на следующие этапы, названы явно.
+                        </li>
+                        <li>
+                            <strong>Отчёт в проверяемом виде</strong>: что
+                            нельзя проверить grep-ом, тому нельзя и верить.
+                        </li>
+                    </ul>
+                    <span class="ref">→ references/stage-prompt.md</span>
+                </div>
+            </div>
+            <div class="cell rail">
+                <span class="ln m"></span><span class="dot m"></span>
+            </div>
+            <div class="cell">
+                <p class="side-note right">
+                    Контракт worktree: агент обязан создать отдельный
+                    <code>git worktree</code>, править только в нём и первой
+                    строкой отчёта назвать его абсолютный путь. Если создать
+                    worktree не удалось — остановиться и доложить.
+                </p>
+            </div>
+
+            <!-- branch -->
+            <div class="cell"></div>
+            <div class="cell rail" style="height: 52px">
+                <svg
+                    width="76"
+                    height="52"
+                    viewBox="0 0 76 52"
+                    aria-hidden="true"
+                >
+                    <line
+                        x1="25"
+                        y1="0"
+                        x2="25"
+                        y2="52"
+                        stroke="var(--main)"
+                        stroke-width="2"
+                    />
+                    <path
+                        d="M25,6 C25,38 51,18 51,52"
+                        fill="none"
+                        stroke="var(--wt)"
+                        stroke-width="2"
+                    />
+                </svg>
+            </div>
+            <div class="cell">
+                <div class="branch-label to-wt">git worktree add --detach</div>
+            </div>
+
+            <!-- 3. implement -->
+            <div class="cell"></div>
+            <div class="cell rail">
+                <span class="ln m"></span><span class="ln w"></span
+                ><span class="dot w"></span>
+            </div>
+            <div class="cell">
+                <div class="node on-wt" data-lane="worktree · агент">
+                    <span class="step-no">Шаг 3 · Реализация</span>
+                    <h3>Агент выполняет этап</h3>
+                    <p>
+                        Все правки — только внутри worktree, без веток и
+                        коммитов. Проверки зелёные после каждого пункта плана;
+                        если условие плана не выполняется — остановка и доклад,
+                        а не правдоподобная выдумка. Большой этап можно сдать
+                        частично: зелёный кусок плюс список того, что осталось.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 4. report -->
+            <div class="cell"></div>
+            <div class="cell rail">
+                <span class="ln m"></span><span class="ln w"></span
+                ><span class="dot w"></span>
+            </div>
+            <div class="cell">
+                <div class="node on-wt" data-lane="worktree · агент">
+                    <span class="step-no">Шаг 4 · Отчёт</span>
+                    <h3>Возвращается отчёт</h3>
+                    <p>
+                        Первой строкой — абсолютный путь worktree и базовый
+                        коммит; дальше — что стало с каждой сущностью, какие
+                        тесты изменились и почему, согласованные отклонения,
+                        сработавшие остановки.
+                        <strong>Без пути и базы отчёт неполон</strong> — иначе
+                        есть риск проверить не то дерево.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 5. verify loop -->
+            <div class="cell">
+                <div class="node on-main" data-lane="main · оркестратор">
+                    <span class="step-no">Шаг 5 · Проверка</span>
+                    <h3>Проверка — в worktree агента</h3>
+                    <ul>
+                        <li>
+                            <strong>Полный набор проверок — в фоне</strong>
+                            (<code>pnpm qa</code> или аналог из gate-playbook);
+                            ревью идёт параллельно с ним.
+                        </li>
+                        <li>
+                            <strong>Оценить масштаб диффа</strong>: от него
+                            зависит глубина ревью. Новые файлы смотри отдельно —
+                            <code>git diff</code> их не показывает.
+                        </li>
+                        <li>
+                            <strong>Состязательное ревью</strong>: искатели по
+                            направлениям, на каждую находку — опровергатель
+                            (схема ниже).
+                        </li>
+                        <li>
+                            <strong
+                                >Ключевые утверждения отчёта проверь машиной
+                                сам</strong
+                            >: grep по имени символа с учётом алиасов и без
+                            тестов; SQL — скомпилировать и сравнить, а не
+                            читать; схемы — выгрузить и сравнить скриптом;
+                            «гейты эквивалентны» — негативный тест.
+                        </li>
+                        <li>
+                            <strong>Свести результаты</strong>: находки,
+                            пережившие опровержение, плюс твои собственные. Твой
+                            grep весомее мнения агента; спор двух агентов
+                            решается чтением кода.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="cell rail">
+                <span class="ln m"></span><span class="ln w"></span
+                ><span class="dot m"></span>
+            </div>
+            <div class="cell">
+                <p class="side-note right">
+                    Разведка агента галлюцинирует: «ссылок нет» и «полностью
+                    удалено» в отчёте — лишь заявления. Каждое «удалено /
+                    перенесено / эквивалентно» проверяется машиной.
+                </p>
+            </div>
+
+            <!-- fork -->
+            <div class="cell">
+                <div class="fork">
+                    <span class="step-no">Развилка</span>
+                    <h3>Ошибка в деталях — или в самом подходе?</h3>
+                    <div class="out">
+                        <span class="tag no">подход</span>
+                        <p>
+                            Блокер в замысле (не тот слой, выдуманный контракт,
+                            неверно прочитанный план) — не латать. Worktree в
+                            сторону, решение принять самому и поручить этап
+                            заново новым промптом ↺ к шагу 2.
+                        </p>
+                    </div>
+                    <div class="out">
+                        <span class="tag yes">детали</span>
+                        <p>Ошибки точечные — чинятся. Дальше по циклу.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="cell rail">
+                <span class="ln m"></span><span class="ln w"></span>
+            </div>
+            <div class="cell"></div>
+
+            <!-- 6. fixes -->
+            <div class="cell">
+                <p class="side-note left">
+                    Оркестратор остаётся рецензентом и коммитером: механические
+                    правки он выносит из своего контекста — тот же принцип
+                    «поручи, потом проверь».
+                </p>
+            </div>
+            <div class="cell rail">
+                <span class="ln m"></span><span class="ln w"></span
+                ><span class="dot w"></span>
+            </div>
+            <div class="cell">
+                <div class="node on-wt" data-lane="worktree · субагент правок">
+                    <span class="step-no">Шаг 6 · Правки</span>
+                    <h3>Правки — субагенту, когда он есть</h3>
+                    <p>
+                        Весь подтверждённый список — файл, строка,
+                        доказательство, суть правки — отдаётся одному субагенту;
+                        правки вносятся <strong>в тот же worktree</strong>, где
+                        шли проверки и ревью. Если субагентов нет (Codex) —
+                        правь сам по <strong>зафиксированному</strong> списку,
+                        не пересматривая находки по ходу. Чинится всё, включая
+                        мелочи: отложенная мелочь просто всплывёт снова через
+                        этап.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 7. re-gate -->
+            <div class="cell"></div>
+            <div class="cell rail">
+                <span class="ln m"></span><span class="ln w"></span
+                ><span class="dot w"></span>
+            </div>
+            <div class="cell">
+                <div class="node on-wt" data-lane="worktree">
+                    <span class="step-no">Шаг 7 · Проверки заново</span>
+                    <h3>Полный прогон после правок</h3>
+                    <p>
+                        Любая правка обнуляет прежний зелёный результат.
+                        Типичная ошибка — закоммитить после правок, прогнав один
+                        только typecheck: зелёный typecheck не означает зелёные
+                        knip и format.
+                    </p>
+                </div>
+            </div>
+
+            <!-- merge -->
+            <div class="cell">
+                <div class="branch-label to-main">
+                    git cherry-pick &lt;sha&gt;
+                </div>
+            </div>
+            <div class="cell rail" style="height: 52px">
+                <svg
+                    width="76"
+                    height="52"
+                    viewBox="0 0 76 52"
+                    aria-hidden="true"
+                >
+                    <line
+                        x1="25"
+                        y1="0"
+                        x2="25"
+                        y2="52"
+                        stroke="var(--main)"
+                        stroke-width="2"
+                    />
+                    <path
+                        d="M51,0 C51,34 25,14 25,48"
+                        fill="none"
+                        stroke="var(--wt)"
+                        stroke-width="2"
+                    />
+                </svg>
+            </div>
+            <div class="cell"></div>
+
+            <!-- 8. land -->
+            <div class="cell">
+                <div class="node on-main" data-lane="main · оркестратор">
+                    <span class="step-no">Шаг 8 · Приземление</span>
+                    <h3>Перенести работу на main</h3>
+                    <ul>
+                        <li>
+                            Сначала <code>git pull</code> на <code>main</code>:
+                            пусть конфликты всплывут, пока результаты проверок
+                            ещё свежие, а не в момент push.
+                        </li>
+                        <li>
+                            Коммит делается <strong>внутри worktree</strong>:
+                            <code
+                                >git -C wt add -A &amp;&amp; git -C wt
+                                commit</code
+                            >
+                            — простой <code>diff | apply</code> молча потерял бы
+                            новые файлы.
+                        </li>
+                        <li>
+                            <code>git cherry-pick &lt;sha&gt;</code> в основную
+                            копию: база объектов у worktree общая, коммит виден
+                            из <code>main</code>.
+                        </li>
+                        <li>
+                            Если база успела уехать, cherry-pick — это настоящее
+                            трёхстороннее слияние: полный прогон проверок на
+                            <code>main</code> заново и перепроверка утверждений
+                            по задетым файлам.
+                        </li>
+                        <li>Всё зелёное — <code>git worktree remove</code>.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="cell rail">
+                <span class="ln m"></span><span class="dot m"></span>
+            </div>
+            <div class="cell"></div>
+
+            <!-- 9. push -->
+            <div class="cell">
+                <div class="node on-main" data-lane="main · оркестратор">
+                    <span class="step-no">Шаг 9 · Push и память</span>
+                    <h3>Отправить и записать выводы</h3>
+                    <p>
+                        Один коммит на этап: что сделано, что исправлено после
+                        ревью, известные временные сбои.
+                        <code>git push</code> до начала следующего этапа —
+                        копить незапушенные этапы значит ставить при итоговом
+                        push всё на одну карту. Если push отклонён:
+                        <code>git pull --rebase</code>, разрешить конфликты,
+                        полный прогон проверок (перебазирование — такая же
+                        правка, как любая другая), снова push. В память проекта
+                        — хеш коммита и найденные подводные камни.
+                    </p>
+                </div>
+            </div>
+            <div class="cell rail">
+                <span class="ln m half-top"></span><span class="dot m"></span>
+            </div>
+            <div class="cell"></div>
+
+            <div class="loop-back">↻ следующий этап: снова git pull</div>
         </div>
-      </div>
+    </section>
 
-      <!-- 4. report -->
-      <div class="cell"></div>
-      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span><span class="dot w"></span></div>
-      <div class="cell">
-        <div class="node on-wt" data-lane="worktree · агент">
-          <span class="step-no">Шаг 4 · Отчёт</span>
-          <h3>Возвращается отчёт</h3>
-          <p>Первой строкой — абсолютный путь worktree и базовый коммит; дальше — что
-            стало с каждой сущностью, какие тесты изменились и почему, согласованные
-            отклонения, сработавшие остановки. <strong>Без пути и базы отчёт неполон</strong> —
-            иначе есть риск проверить не то дерево.</p>
+    <!-- ================= adversarial review ================= -->
+    <section>
+        <div class="sec-head">
+            <h2>Состязательное ревью</h2>
+            <span class="chip">шаг 5.3</span>
         </div>
-      </div>
+        <p class="sec-sub">
+            По одному <strong>искателю</strong> на каждое независимое
+            направление проверки; каждую найденную проблему — включая мелкие —
+            атакует отдельный <strong>опровергатель</strong>, чья задача —
+            доказать, что проблемы нет. Конвейер без общего барьера: находки
+            одного направления уходят на проверку сразу, не дожидаясь остальных.
+        </p>
 
-      <!-- 5. verify loop -->
-      <div class="cell">
-        <div class="node on-main" data-lane="main · оркестратор">
-          <span class="step-no">Шаг 5 · Проверка</span>
-          <h3>Проверка — в worktree агента</h3>
-          <ul>
-            <li><strong>Полный набор проверок — в фоне</strong> (<code>pnpm qa</code> или аналог
-              из gate-playbook); ревью идёт параллельно с ним.</li>
-            <li><strong>Оценить масштаб диффа</strong>: от него зависит глубина ревью.
-              Новые файлы смотри отдельно — <code>git diff</code> их не показывает.</li>
-            <li><strong>Состязательное ревью</strong>: искатели по направлениям, на каждую
-              находку — опровергатель (схема ниже).</li>
-            <li><strong>Ключевые утверждения отчёта проверь машиной сам</strong>: grep по имени
-              символа с учётом алиасов и без тестов; SQL — скомпилировать и сравнить, а не читать;
-              схемы — выгрузить и сравнить скриптом; «гейты эквивалентны» — негативный тест.</li>
-            <li><strong>Свести результаты</strong>: находки, пережившие опровержение, плюс твои
-              собственные. Твой grep весомее мнения агента; спор двух агентов решается чтением кода.</li>
-          </ul>
+        <div class="pipe">
+            <div class="pipe-inner">
+                <div class="stage-col">
+                    <span class="st-label">Общая преамбула</span>
+                    <div class="box common">
+                        <span class="t">COMMON</span>
+                        <p>
+                            Базовый коммит; что заявлено; что согласовано
+                            заранее (намеренные решения не считаются находками);
+                            статус проверок; пустой список находок — нормальный
+                            результат.
+                        </p>
+                    </div>
+                </div>
+                <div class="pipe-arrow">→</div>
+                <div class="stage-col">
+                    <span class="st-label">Искатели · по направлениям</span>
+                    <div class="box dim">
+                        <span class="t">behavioral-equivalence</span>
+                        <p>
+                            поведение не изменилось; SQL компилируй и сравнивай,
+                            а не читай
+                        </p>
+                    </div>
+                    <div class="box dim">
+                        <span class="t">residue</span>
+                        <p>
+                            мёртвые экспорты, осиротевшие реэкспорты, код, живой
+                            только в тестах
+                        </p>
+                    </div>
+                    <div class="box dim">
+                        <span class="t">tests-integrity</span>
+                        <p>
+                            проверки в тестах не ослаблены; изменённое ожидание
+                            — это находка
+                        </p>
+                    </div>
+                    <div class="box dim">
+                        <span class="t">contract-fidelity</span>
+                        <p>
+                            схема повторяет источник поле в поле — выгрузить и
+                            сравнить скриптом
+                        </p>
+                    </div>
+                    <div class="box dim">
+                        <span class="t">money-path</span>
+                        <p>
+                            авторизация, покупки, миграции, синхронизация —
+                            больше голосов
+                        </p>
+                    </div>
+                </div>
+                <div class="pipe-arrow">→</div>
+                <div class="stage-col">
+                    <span class="st-label">Опровергатели</span>
+                    <div class="box">
+                        <span class="t">на каждую находку</span>
+                        <p>
+                            Есть компенсирующий код? Дифф прочитан неверно?
+                            Решение было согласовано? Находка реальна, но
+                            серьёзность завышена или занижена — вернуть
+                            <code>adjustedSeverity</code>.
+                        </p>
+                    </div>
+                </div>
+                <div class="pipe-arrow">→</div>
+                <div class="stage-col">
+                    <span class="st-label">Вердикт</span>
+                    <div class="box verd-ok">
+                        <span class="t">подтверждена</span>
+                        <p>
+                            пережила опровержение — идёт в список правок с
+                            итоговой серьёзностью
+                        </p>
+                    </div>
+                    <div class="box verd-bad">
+                        <span class="t">опровергнута</span>
+                        <p>
+                            правдоподобная, но неверная — отброшена; «чинить» её
+                            было бы ошибкой
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span><span class="dot m"></span></div>
-      <div class="cell"><p class="side-note right">Разведка агента галлюцинирует: «ссылок нет»
-        и «полностью удалено» в отчёте — лишь заявления. Каждое «удалено / перенесено /
-        эквивалентно» проверяется машиной.</p></div>
 
-      <!-- fork -->
-      <div class="cell">
-        <div class="fork">
-          <span class="step-no">Развилка</span>
-          <h3>Ошибка в деталях — или в самом подходе?</h3>
-          <div class="out"><span class="tag no">подход</span>
-            <p>Блокер в замысле (не тот слой, выдуманный контракт, неверно прочитанный план) —
-              не латать. Worktree в сторону, решение принять самому и поручить этап заново
-              новым промптом ↺ к шагу 2.</p></div>
-          <div class="out"><span class="tag yes">детали</span>
-            <p>Ошибки точечные — чинятся. Дальше по циклу.</p></div>
+        <p class="pipe-note">
+            <strong>Масштаб по запросу:</strong> направления берутся из того,
+            что этап реально менял, а не из фиксированного списка. Ревью —
+            широкая сеть, но оно не заменяет твоих собственных машинных
+            проверок. Метод один (review-workflow.md), механика исполнения у
+            каждой среды своя:
+        </p>
+
+        <div class="rt-grid">
+            <div class="rt claude">
+                <span class="chip">Claude Code · review-runtime-claude.md</span>
+                <p>
+                    <strong>Полная форма метода.</strong> Скрипт Workflow:
+                    искатели и опровергатели — параллельные изолированные
+                    агенты, не знающие друг о друге; формат ответа проверяется
+                    на уровне инструмента, невалидный ответ перезапрашивается
+                    сам; проверки идут в фоне одновременно с ревью.
+                </p>
+            </div>
+            <div class="rt codex">
+                <span class="chip">Codex · review-runtime-codex.md</span>
+                <p>
+                    <strong>Упрощённый путь.</strong> Сначала полный прогон
+                    проверок; направления — по одному, каждое заново от
+                    реального диффа; список находок фиксируется до их проверки;
+                    опровержение — отдельным запуском <code>codex exec</code>,
+                    где это возможно; JSON проверяешь сам. Компенсация — больший
+                    вес собственных машинных проверок.
+                </p>
+            </div>
         </div>
-      </div>
-      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span></div>
-      <div class="cell"></div>
+    </section>
 
-      <!-- 6. fixes -->
-      <div class="cell"><p class="side-note left">Оркестратор остаётся рецензентом и коммитером:
-        механические правки он выносит из своего контекста — тот же принцип
-        «поручи, потом проверь».</p></div>
-      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span><span class="dot w"></span></div>
-      <div class="cell">
-        <div class="node on-wt" data-lane="worktree · субагент правок">
-          <span class="step-no">Шаг 6 · Правки</span>
-          <h3>Правки — субагенту, когда он есть</h3>
-          <p>Весь подтверждённый список — файл, строка, доказательство, суть правки —
-            отдаётся одному субагенту; правки вносятся <strong>в тот же worktree</strong>,
-            где шли проверки и ревью. Если субагентов нет (Codex) — правь сам по
-            <strong>зафиксированному</strong> списку, не пересматривая находки по ходу.
-            Чинится всё, включая мелочи: отложенная мелочь просто всплывёт снова через этап.</p>
+    <!-- ================= principles ================= -->
+    <section>
+        <div class="sec-head">
+            <h2>Три принципа, на которых стоит цикл</h2>
+            <span class="chip">выстрадано</span>
         </div>
-      </div>
-
-      <!-- 7. re-gate -->
-      <div class="cell"></div>
-      <div class="cell rail"><span class="ln m"></span><span class="ln w"></span><span class="dot w"></span></div>
-      <div class="cell">
-        <div class="node on-wt" data-lane="worktree">
-          <span class="step-no">Шаг 7 · Проверки заново</span>
-          <h3>Полный прогон после правок</h3>
-          <p>Любая правка обнуляет прежний зелёный результат. Типичная ошибка —
-            закоммитить после правок, прогнав один только typecheck: зелёный typecheck
-            не означает зелёные knip и format.</p>
+        <div class="principles">
+            <div class="prin">
+                <span class="num">I</span>
+                <h3>«Обе проверки зелёные» — не эквивалентность</h3>
+                <p>
+                    Зелёный результат на чистом коде говорит лишь, что сейчас ни
+                    одна проверка не срабатывает. Эквивалентность доказывает
+                    <strong>негативный тест</strong>: внести нарушение,
+                    убедиться, что его ловят <em>оба</em> механизма — старый и
+                    новый, — и откатить.
+                </p>
+            </div>
+            <div class="prin">
+                <span class="num">II</span>
+                <h3>Разведка галлюцинирует — проверяй grep-ом по символу</h3>
+                <p>
+                    Агент уверенно доложит «файл удалён, ссылок нет» — и
+                    ошибётся: искал по относительному пути, а импорт шёл через
+                    алиас. Утверждения «ссылок нет» проверяются только grep-ом
+                    по <strong>имени символа</strong> с учётом алиасов; код,
+                    живой только в тестах, ловится отдельно —
+                    <code>grep -v '\.test\.'</code>.
+                </p>
+            </div>
+            <div class="prin">
+                <span class="num">III</span>
+                <h3>
+                    Находка не считается реальной, пока не пережила опровержение
+                </h3>
+                <p>
+                    Правдоподобная находка — ещё не настоящая. Независимый
+                    опровергатель на каждую пытается доказать обратное:
+                    настоящие дефекты выживают, остальное отбрасывается или
+                    понижается в серьёзности. Иначе правильный код «чинится» в
+                    неправильный.
+                </p>
+            </div>
         </div>
-      </div>
+    </section>
 
-      <!-- merge -->
-      <div class="cell"><div class="branch-label to-main">git cherry-pick &lt;sha&gt;</div></div>
-      <div class="cell rail" style="height:52px">
-        <svg width="76" height="52" viewBox="0 0 76 52" aria-hidden="true">
-          <line x1="25" y1="0" x2="25" y2="52" stroke="var(--main)" stroke-width="2"/>
-          <path d="M51,0 C51,34 25,14 25,48" fill="none" stroke="var(--wt)" stroke-width="2"/>
-        </svg>
-      </div>
-      <div class="cell"></div>
-
-      <!-- 8. land -->
-      <div class="cell">
-        <div class="node on-main" data-lane="main · оркестратор">
-          <span class="step-no">Шаг 8 · Приземление</span>
-          <h3>Перенести работу на main</h3>
-          <ul>
-            <li>Сначала <code>git pull</code> на <code>main</code>: пусть конфликты всплывут,
-              пока результаты проверок ещё свежие, а не в момент push.</li>
-            <li>Коммит делается <strong>внутри worktree</strong>:
-              <code>git -C wt add -A &amp;&amp; git -C wt commit</code> — простой
-              <code>diff | apply</code> молча потерял бы новые файлы.</li>
-            <li><code>git cherry-pick &lt;sha&gt;</code> в основную копию: база объектов
-              у worktree общая, коммит виден из <code>main</code>.</li>
-            <li>Если база успела уехать, cherry-pick — это настоящее трёхстороннее слияние:
-              полный прогон проверок на <code>main</code> заново и перепроверка утверждений
-              по задетым файлам.</li>
-            <li>Всё зелёное — <code>git worktree remove</code>.</li>
-          </ul>
+    <!-- ================= parallel ================= -->
+    <section>
+        <div class="sec-head">
+            <h2>Параллельные этапы</h2>
+            <span class="chip">приземление по одному</span>
         </div>
-      </div>
-      <div class="cell rail"><span class="ln m"></span><span class="dot m"></span></div>
-      <div class="cell"></div>
-
-      <!-- 9. push -->
-      <div class="cell">
-        <div class="node on-main" data-lane="main · оркестратор">
-          <span class="step-no">Шаг 9 · Push и память</span>
-          <h3>Отправить и записать выводы</h3>
-          <p>Один коммит на этап: что сделано, что исправлено после ревью, известные
-            временные сбои. <code>git push</code> до начала следующего этапа — копить
-            незапушенные этапы значит ставить при итоговом push всё на одну карту.
-            Если push отклонён: <code>git pull --rebase</code>, разрешить конфликты,
-            полный прогон проверок (перебазирование — такая же правка, как любая другая),
-            снова push. В память проекта — хеш коммита и найденные подводные камни.</p>
+        <div class="par-grid">
+            <div class="par-fig">
+                <svg
+                    viewBox="0 0 200 150"
+                    aria-label="Несколько worktree от одной базы, приземления по очереди"
+                >
+                    <line
+                        x1="24"
+                        y1="8"
+                        x2="24"
+                        y2="142"
+                        stroke="var(--main)"
+                        stroke-width="2.5"
+                    />
+                    <path
+                        d="M24,22 C24,50 78,34 78,58 L78,70 C78,92 24,80 24,96"
+                        fill="none"
+                        stroke="var(--wt)"
+                        stroke-width="2"
+                    />
+                    <path
+                        d="M24,22 C24,62 128,44 128,72 L128,86 C128,110 24,100 24,118"
+                        fill="none"
+                        stroke="var(--wt)"
+                        stroke-width="2"
+                        opacity="0.62"
+                    />
+                    <path
+                        d="M24,22 C24,74 176,56 176,88 L176,140"
+                        fill="none"
+                        stroke="var(--wt)"
+                        stroke-width="2"
+                        stroke-dasharray="4 4"
+                        opacity="0.5"
+                    />
+                    <circle cx="24" cy="22" r="4.5" fill="var(--main)" />
+                    <circle cx="24" cy="96" r="4.5" fill="var(--main)" />
+                    <circle cx="24" cy="118" r="4.5" fill="var(--main)" />
+                    <text
+                        x="34"
+                        y="99"
+                        font-size="9"
+                        fill="var(--muted)"
+                        font-family="ui-monospace,Menlo,monospace"
+                    >
+                        этап A
+                    </text>
+                    <text
+                        x="34"
+                        y="121"
+                        font-size="9"
+                        fill="var(--muted)"
+                        font-family="ui-monospace,Menlo,monospace"
+                    >
+                        этап B
+                    </text>
+                    <text
+                        x="140"
+                        y="132"
+                        font-size="9"
+                        fill="var(--muted)"
+                        font-family="ui-monospace,Menlo,monospace"
+                    >
+                        C ждёт
+                    </text>
+                </svg>
+            </div>
+            <div class="par-rules">
+                <div class="rule">
+                    <b>Приземления — строго по одному.</b>
+                    <span
+                        >Несколько этапов в своих worktree от одной базы —
+                        нормально, но шаги 8–9 выполняются по очереди: этап A
+                        приземляется целиком, только потом B.</span
+                    >
+                </div>
+                <div class="rule">
+                    <b>После каждого приземления базы остальных устаревают.</b>
+                    <span
+                        >Их проверки и ревью выполнялись против старой базы:
+                        когда придёт их очередь, полный прогон проверок на
+                        <code>main</code> обязателен, плюс перепроверка
+                        утверждений по файлам, которые задело предыдущее
+                        приземление.</span
+                    >
+                </div>
+                <div class="rule">
+                    <b
+                        >Защита на этапе постановки: непересекающиеся наборы
+                        файлов.</b
+                    >
+                    <span
+                        >Если два параллельных этапа трогают один модуль — на
+                        самом деле это был один этап: объедини их или выстрой
+                        последовательно, а не устраивай гонку приземлений.</span
+                    >
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="cell rail"><span class="ln m half-top"></span><span class="dot m"></span></div>
-      <div class="cell"></div>
+    </section>
 
-      <div class="loop-back">↻ следующий этап: снова git pull</div>
-    </div>
-  </section>
-
-  <!-- ================= adversarial review ================= -->
-  <section>
-    <div class="sec-head"><h2>Состязательное ревью</h2><span class="chip">шаг 5.3</span></div>
-    <p class="sec-sub">По одному <strong>искателю</strong> на каждое независимое направление
-      проверки; каждую найденную проблему — включая мелкие — атакует отдельный
-      <strong>опровергатель</strong>, чья задача — доказать, что проблемы нет. Конвейер без
-      общего барьера: находки одного направления уходят на проверку сразу, не дожидаясь остальных.</p>
-
-    <div class="pipe"><div class="pipe-inner">
-      <div class="stage-col">
-        <span class="st-label">Общая преамбула</span>
-        <div class="box common">
-          <span class="t">COMMON</span>
-          <p>Базовый коммит; что заявлено; что согласовано заранее (намеренные решения
-            не считаются находками); статус проверок; пустой список находок — нормальный результат.</p>
+    <!-- ================= closing audit ================= -->
+    <section>
+        <div class="sec-head">
+            <h2>Финальный аудит приёмки</h2>
+            <span class="chip">завершение работы</span>
         </div>
-      </div>
-      <div class="pipe-arrow">→</div>
-      <div class="stage-col">
-        <span class="st-label">Искатели · по направлениям</span>
-        <div class="box dim"><span class="t">behavioral-equivalence</span><p>поведение не изменилось; SQL компилируй и сравнивай, а не читай</p></div>
-        <div class="box dim"><span class="t">residue</span><p>мёртвые экспорты, осиротевшие реэкспорты, код, живой только в тестах</p></div>
-        <div class="box dim"><span class="t">tests-integrity</span><p>проверки в тестах не ослаблены; изменённое ожидание — это находка</p></div>
-        <div class="box dim"><span class="t">contract-fidelity</span><p>схема повторяет источник поле в поле — выгрузить и сравнить скриптом</p></div>
-        <div class="box dim"><span class="t">money-path</span><p>авторизация, покупки, миграции, синхронизация — больше голосов</p></div>
-      </div>
-      <div class="pipe-arrow">→</div>
-      <div class="stage-col">
-        <span class="st-label">Опровергатели</span>
-        <div class="box">
-          <span class="t">на каждую находку</span>
-          <p>Есть компенсирующий код? Дифф прочитан неверно? Решение было согласовано?
-            Находка реальна, но серьёзность завышена или занижена — вернуть
-            <code>adjustedSeverity</code>.</p>
+        <p class="sec-sub">
+            Последний этап приземлён — это ещё не «готово», это лишь «все этапы
+            зелёные». Поэтапная проверка доказала, что каждый этап сделал
+            написанное в <em>его промпте</em>; но никто пока не доказал, что
+            промпты вместе покрывают <em>исходную задачу</em>. Дыры живут именно
+            в этом шве: требования, которые не взял на себя ни один этап; планка
+            качества, которую «держал кто-то другой»; мелочи, отложенные на
+            этап, которого так и не случилось.
+        </p>
+        <div class="close-grid">
+            <div class="rule">
+                <span class="num">1 · Требования</span>
+                <b>Вернуться к исходной постановке.</b>
+                <span
+                    >К первоисточнику — документу, плану, словам пользователя, —
+                    а не к карте этапов: именно при её составлении объём работы
+                    незаметно сужается. Требования выписать явным
+                    чек-листом.</span
+                >
+            </div>
+            <div class="rule">
+                <span class="num">2 · Ревью полноты</span>
+                <b>Та же машинерия — по всей работе целиком.</b>
+                <span
+                    >Состязательное ревью по
+                    <code>git diff &lt;база работы&gt;..HEAD</code> с
+                    направлениями полноты:</span
+                >
+                <div class="dims">
+                    <span>requirements-coverage</span><span>scope-fidelity</span
+                    ><span>quality-bar</span><span>deferred-residue</span>
+                </div>
+            </div>
+            <div class="rule">
+                <span class="num">3 · Машинная приёмка</span>
+                <b>Прогнать поведение от начала до конца.</b>
+                <span
+                    >Доказательства вместо пересказа: зелёные проверки говорят о
+                    здоровье кода, но не о том, что требование выполнено.</span
+                >
+            </div>
+            <div class="rule">
+                <span class="num">4 · Список пробелов</span>
+                <b>Каждый пробел — новый этап или согласованное исключение.</b>
+                <span
+                    >Подтверждённый пробел становится либо новым этапом (назад в
+                    режим автора), либо записанным исключением, которое
+                    пользователь явно одобрил. Готово — когда список пуст или
+                    согласован целиком.</span
+                >
+            </div>
         </div>
-      </div>
-      <div class="pipe-arrow">→</div>
-      <div class="stage-col">
-        <span class="st-label">Вердикт</span>
-        <div class="box verd-ok"><span class="t">подтверждена</span><p>пережила опровержение — идёт в список правок с итоговой серьёзностью</p></div>
-        <div class="box verd-bad"><span class="t">опровергнута</span><p>правдоподобная, но неверная — отброшена; «чинить» её было бы ошибкой</p></div>
-      </div>
-    </div></div>
+    </section>
 
-    <p class="pipe-note"><strong>Масштаб по запросу:</strong> направления берутся из того,
-      что этап реально менял, а не из фиксированного списка. Ревью — широкая сеть, но оно
-      не заменяет твоих собственных машинных проверок. Метод один (review-workflow.md),
-      механика исполнения у каждой среды своя:</p>
+    <!-- ================= scaling ================= -->
+    <section>
+        <div class="sec-head">
+            <h2>Глубина проверки — по запросу</h2>
+            <span class="chip">калибровка</span>
+        </div>
+        <div class="scale">
+            <table>
+                <tr>
+                    <th>Запрос</th>
+                    <th>Искатели</th>
+                    <th>Опровержение</th>
+                    <th>Свои машинные проверки</th>
+                </tr>
+                <tr>
+                    <td>«Глянь, похоже ли на правду»</td>
+                    <td>два-три</td>
+                    <td>один голос на находку</td>
+                    <td>только ключевые утверждения</td>
+                </tr>
+                <tr>
+                    <td>«Тщательно проверь» · 150 файлов · критичный путь</td>
+                    <td>больше, по направлениям</td>
+                    <td>3–5 голосов на находку</td>
+                    <td>полные, поверх ревью</td>
+                </tr>
+            </table>
+        </div>
+        <p class="sec-sub" style="margin-top: 14px">
+            Сомневаешься — для ревью и аудита выбирай тщательность: пропущенная
+            регрессия в <code>main</code> обойдётся несравнимо дороже лишнего
+            проверяющего.
+        </p>
+    </section>
 
-    <div class="rt-grid">
-      <div class="rt claude">
-        <span class="chip">Claude Code · review-runtime-claude.md</span>
-        <p><strong>Полная форма метода.</strong> Скрипт Workflow: искатели и опровергатели —
-          параллельные изолированные агенты, не знающие друг о друге; формат ответа
-          проверяется на уровне инструмента, невалидный ответ перезапрашивается сам;
-          проверки идут в фоне одновременно с ревью.</p>
-      </div>
-      <div class="rt codex">
-        <span class="chip">Codex · review-runtime-codex.md</span>
-        <p><strong>Упрощённый путь.</strong> Сначала полный прогон проверок; направления —
-          по одному, каждое заново от реального диффа; список находок фиксируется до их
-          проверки; опровержение — отдельным запуском <code>codex exec</code>, где это
-          возможно; JSON проверяешь сам. Компенсация — больший вес собственных машинных проверок.</p>
-      </div>
-    </div>
-  </section>
+    <!-- ================= files ================= -->
+    <section>
+        <div class="sec-head">
+            <h2>Из чего состоит скилл</h2>
+            <span class="chip">структура</span>
+        </div>
+        <div class="files">
+            <div class="file">
+                <span class="fn">SKILL.md</span>
+                <p>
+                    режимы, ритм, цикл проверки из 9 шагов, параллельные этапы,
+                    финальный аудит, принципы
+                </p>
+            </div>
+            <div class="file">
+                <span class="fn">references/stage-prompt.md</span>
+                <p>
+                    шаблон промпта этапа: что прочитать заранее, условия
+                    остановки, «чего не делать», «готово, когда»
+                </p>
+            </div>
+            <div class="file">
+                <span class="fn">references/review-workflow.md</span>
+                <p>
+                    метод ревью: искатель → опровергатель, формат данных,
+                    преамбула, направления проверки
+                </p>
+            </div>
+            <div class="file">
+                <span class="fn">references/review-runtime-claude.md</span>
+                <p>
+                    механика для Claude Code: скелет Workflow-скрипта, схемы
+                    ответов, подводные камни
+                </p>
+            </div>
+            <div class="file">
+                <span class="fn">references/review-runtime-codex.md</span>
+                <p>
+                    механика для Codex: последовательный путь с максимально
+                    доступной изоляцией
+                </p>
+            </div>
+            <div class="file">
+                <span class="fn">references/gate-playbook.md</span>
+                <p>
+                    как определить полный набор проверок в новом репозитории и
+                    его типовые сбои
+                </p>
+            </div>
+        </div>
+    </section>
 
-  <!-- ================= principles ================= -->
-  <section>
-    <div class="sec-head"><h2>Три принципа, на которых стоит цикл</h2><span class="chip">выстрадано</span></div>
-    <div class="principles">
-      <div class="prin">
-        <span class="num">I</span>
-        <h3>«Обе проверки зелёные» — не эквивалентность</h3>
-        <p>Зелёный результат на чистом коде говорит лишь, что сейчас ни одна проверка
-          не срабатывает. Эквивалентность доказывает <strong>негативный тест</strong>:
-          внести нарушение, убедиться, что его ловят <em>оба</em> механизма — старый и
-          новый, — и откатить.</p>
-      </div>
-      <div class="prin">
-        <span class="num">II</span>
-        <h3>Разведка галлюцинирует — проверяй grep-ом по символу</h3>
-        <p>Агент уверенно доложит «файл удалён, ссылок нет» — и ошибётся: искал по
-          относительному пути, а импорт шёл через алиас. Утверждения «ссылок нет»
-          проверяются только grep-ом по <strong>имени символа</strong> с учётом алиасов;
-          код, живой только в тестах, ловится отдельно — <code>grep -v '\.test\.'</code>.</p>
-      </div>
-      <div class="prin">
-        <span class="num">III</span>
-        <h3>Находка не считается реальной, пока не пережила опровержение</h3>
-        <p>Правдоподобная находка — ещё не настоящая. Независимый опровергатель на каждую
-          пытается доказать обратное: настоящие дефекты выживают, остальное отбрасывается
-          или понижается в серьёзности. Иначе правильный код «чинится» в неправильный.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= parallel ================= -->
-  <section>
-    <div class="sec-head"><h2>Параллельные этапы</h2><span class="chip">приземление по одному</span></div>
-    <div class="par-grid">
-      <div class="par-fig">
-        <svg viewBox="0 0 200 150" aria-label="Несколько worktree от одной базы, приземления по очереди">
-          <line x1="24" y1="8" x2="24" y2="142" stroke="var(--main)" stroke-width="2.5"/>
-          <path d="M24,22 C24,50 78,34 78,58 L78,70 C78,92 24,80 24,96" fill="none" stroke="var(--wt)" stroke-width="2"/>
-          <path d="M24,22 C24,62 128,44 128,72 L128,86 C128,110 24,100 24,118" fill="none" stroke="var(--wt)" stroke-width="2" opacity="0.62"/>
-          <path d="M24,22 C24,74 176,56 176,88 L176,140" fill="none" stroke="var(--wt)" stroke-width="2" stroke-dasharray="4 4" opacity="0.5"/>
-          <circle cx="24" cy="22" r="4.5" fill="var(--main)"/>
-          <circle cx="24" cy="96" r="4.5" fill="var(--main)"/>
-          <circle cx="24" cy="118" r="4.5" fill="var(--main)"/>
-          <text x="34" y="99" font-size="9" fill="var(--muted)" font-family="ui-monospace,Menlo,monospace">этап A</text>
-          <text x="34" y="121" font-size="9" fill="var(--muted)" font-family="ui-monospace,Menlo,monospace">этап B</text>
-          <text x="140" y="132" font-size="9" fill="var(--muted)" font-family="ui-monospace,Menlo,monospace">C ждёт</text>
-        </svg>
-      </div>
-      <div class="par-rules">
-        <div class="rule"><b>Приземления — строго по одному.</b>
-          <span>Несколько этапов в своих worktree от одной базы — нормально, но шаги 8–9
-            выполняются по очереди: этап A приземляется целиком, только потом B.</span></div>
-        <div class="rule"><b>После каждого приземления базы остальных устаревают.</b>
-          <span>Их проверки и ревью выполнялись против старой базы: когда придёт их очередь,
-            полный прогон проверок на <code>main</code> обязателен, плюс перепроверка
-            утверждений по файлам, которые задело предыдущее приземление.</span></div>
-        <div class="rule"><b>Защита на этапе постановки: непересекающиеся наборы файлов.</b>
-          <span>Если два параллельных этапа трогают один модуль — на самом деле это был один
-            этап: объедини их или выстрой последовательно, а не устраивай гонку приземлений.</span></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= closing audit ================= -->
-  <section>
-    <div class="sec-head"><h2>Финальный аудит приёмки</h2><span class="chip">завершение работы</span></div>
-    <p class="sec-sub">Последний этап приземлён — это ещё не «готово», это лишь «все этапы
-      зелёные». Поэтапная проверка доказала, что каждый этап сделал написанное
-      в <em>его промпте</em>; но никто пока не доказал, что промпты вместе покрывают
-      <em>исходную задачу</em>. Дыры живут именно в этом шве: требования, которые не взял
-      на себя ни один этап; планка качества, которую «держал кто-то другой»; мелочи,
-      отложенные на этап, которого так и не случилось.</p>
-    <div class="close-grid">
-      <div class="rule"><span class="num">1 · Требования</span>
-        <b>Вернуться к исходной постановке.</b>
-        <span>К первоисточнику — документу, плану, словам пользователя, — а не к карте
-          этапов: именно при её составлении объём работы незаметно сужается.
-          Требования выписать явным чек-листом.</span></div>
-      <div class="rule"><span class="num">2 · Ревью полноты</span>
-        <b>Та же машинерия — по всей работе целиком.</b>
-        <span>Состязательное ревью по <code>git diff &lt;база работы&gt;..HEAD</code>
-          с направлениями полноты:</span>
-        <div class="dims"><span>requirements-coverage</span><span>scope-fidelity</span><span>quality-bar</span><span>deferred-residue</span></div></div>
-      <div class="rule"><span class="num">3 · Машинная приёмка</span>
-        <b>Прогнать поведение от начала до конца.</b>
-        <span>Доказательства вместо пересказа: зелёные проверки говорят о здоровье кода,
-          но не о том, что требование выполнено.</span></div>
-      <div class="rule"><span class="num">4 · Список пробелов</span>
-        <b>Каждый пробел — новый этап или согласованное исключение.</b>
-        <span>Подтверждённый пробел становится либо новым этапом (назад в режим автора),
-          либо записанным исключением, которое пользователь явно одобрил. Готово — когда
-          список пуст или согласован целиком.</span></div>
-    </div>
-  </section>
-
-  <!-- ================= scaling ================= -->
-  <section>
-    <div class="sec-head"><h2>Глубина проверки — по запросу</h2><span class="chip">калибровка</span></div>
-    <div class="scale">
-      <table>
-        <tr><th>Запрос</th><th>Искатели</th><th>Опровержение</th><th>Свои машинные проверки</th></tr>
-        <tr>
-          <td>«Глянь, похоже ли на правду»</td>
-          <td>два-три</td>
-          <td>один голос на находку</td>
-          <td>только ключевые утверждения</td>
-        </tr>
-        <tr>
-          <td>«Тщательно проверь» · 150 файлов · критичный путь</td>
-          <td>больше, по направлениям</td>
-          <td>3–5 голосов на находку</td>
-          <td>полные, поверх ревью</td>
-        </tr>
-      </table>
-    </div>
-    <p class="sec-sub" style="margin-top:14px">Сомневаешься — для ревью и аудита выбирай
-      тщательность: пропущенная регрессия в <code>main</code> обойдётся несравнимо дороже
-      лишнего проверяющего.</p>
-  </section>
-
-  <!-- ================= files ================= -->
-  <section>
-    <div class="sec-head"><h2>Из чего состоит скилл</h2><span class="chip">структура</span></div>
-    <div class="files">
-      <div class="file"><span class="fn">SKILL.md</span><p>режимы, ритм, цикл проверки из 9 шагов, параллельные этапы, финальный аудит, принципы</p></div>
-      <div class="file"><span class="fn">references/stage-prompt.md</span><p>шаблон промпта этапа: что прочитать заранее, условия остановки, «чего не делать», «готово, когда»</p></div>
-      <div class="file"><span class="fn">references/review-workflow.md</span><p>метод ревью: искатель → опровергатель, формат данных, преамбула, направления проверки</p></div>
-      <div class="file"><span class="fn">references/review-runtime-claude.md</span><p>механика для Claude Code: скелет Workflow-скрипта, схемы ответов, подводные камни</p></div>
-      <div class="file"><span class="fn">references/review-runtime-codex.md</span><p>механика для Codex: последовательный путь с максимально доступной изоляцией</p></div>
-      <div class="file"><span class="fn">references/gate-playbook.md</span><p>как определить полный набор проверок в новом репозитории и его типовые сбои</p></div>
-    </div>
-  </section>
-
-  <footer>ytil-skills · stage-orchestrator v1.7 · pull → поручи → проверь → приземли → push ↻ → финальный аудит приёмки</footer>
+    <footer>
+        ytil-skills · stage-orchestrator v1.7 · pull → поручи → проверь →
+        приземли → push ↻ → финальный аудит приёмки
+    </footer>
 </div>

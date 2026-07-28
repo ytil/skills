@@ -1,2 +1,5 @@
 node_modules/
 package-lock.json
+
+# local worktree copies of the repo — not ours to format
+.claude/

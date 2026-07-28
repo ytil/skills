@@ -1,17 +1,17 @@
 ---
 name: stage-orchestrator
 description: >-
-  Orchestrates a multi-stage refactor or build over delegated work: authors a
-  precise stage prompt for an external agent, then verifies the returned work —
-  full gate, adversarial review, machine-checked claims — before landing it on
-  main. Trigger whenever the session orchestrates delegated work: writing a
-  stage/task prompt for another agent, receiving a stage report or a delegate's
-  summary ("готово, сделал X"), reviewing a large uncommitted diff someone else
-  produced, or when the user says "проверь что сделано", "выдай промпт для
-  этапа", "верифицируй", "заказчик прислал отчёт", or names a stage number —
-  the point is the delegate → verify → fix → commit loop, not any single
-  keyword. Not for reviewing a diff this session authored itself or an
-  ordinary PR — that is plain code review.
+    Orchestrates a multi-stage refactor or build over delegated work: authors a
+    precise stage prompt for an external agent, then verifies the returned work —
+    full gate, adversarial review, machine-checked claims — before landing it on
+    main. Trigger whenever the session orchestrates delegated work: writing a
+    stage/task prompt for another agent, receiving a stage report or a delegate's
+    summary ("готово, сделал X"), reviewing a large uncommitted diff someone else
+    produced, or when the user says "проверь что сделано", "выдай промпт для
+    этапа", "верифицируй", "заказчик прислал отчёт", or names a stage number —
+    the point is the delegate → verify → fix → commit loop, not any single
+    keyword. Not for reviewing a diff this session authored itself or an
+    ordinary PR — that is plain code review.
 ---
 
 # Stage orchestrator
@@ -73,12 +73,12 @@ because the report says green — the report is a claim, not evidence.
    `git -C <worktree> status --short | wc -l`, `git -C <worktree> diff --stat | tail`.
    You need the scale (10 files vs 200) to calibrate how deep to review and
    which claims are load-bearing. Note untracked files separately — `git diff`
-   does not show them, and a stage that *adds* files hides its most important
+   does not show them, and a stage that _adds_ files hides its most important
    changes there.
 
 3. **Launch an adversarial review** over the diff — one finder per independent
    dimension, each finding then attacked by a separate verifier that tries to
-   *refute* it. The method — the shape, the data contract, the shared prompt
+   _refute_ it. The method — the shape, the data contract, the shared prompt
    preamble, the dimension menu — lives in `references/review-workflow.md`.
    The execution mechanics are per-runtime; read only the file for yours:
    `references/review-runtime-claude.md` (Claude Code — parallel isolated
@@ -92,7 +92,7 @@ because the report says green — the report is a claim, not evidence.
 
 4. **Machine-verify the load-bearing claims yourself, in parallel** — do not
    outsource this entirely to the review agents. The external agent's recon
-   *hallucinates*; its report says "0 refs" or "fully removed" when it is not.
+   _hallucinates_; its report says "0 refs" or "fully removed" when it is not.
    For every "removed / migrated / equivalent" claim, check it with a grep by
    **symbol name**, alias-aware, excluding tests where tests are not the point:
    `grep -rn '<symbol>' <worktree>/src --include='*.ts' | grep -v '\.test\.'`
@@ -104,18 +104,18 @@ because the report says green — the report is a claim, not evidence.
    the violation, confirm both mechanisms catch it, revert.
 
 5. **Reconcile the confirmed set.** What you act on = findings that survived
-   adversarial refutation, at the severity the verifier settled on — *every*
+   adversarial refutation, at the severity the verifier settled on — _every_
    severity, minors included — plus anything your own machine-checks surfaced.
    When a review agent and your grep disagree, your grep wins; when two agents
    disagree, read the code and break the tie yourself.
 
-   Before delegating fixes, ask whether the confirmed set says the *approach*
-   is wrong, not just the execution — a blocker in the design (wrong layer, an
-   invented contract, a misread plan) rather than a slipped detail. If so, do
-   not patch it into shape: discard or park the worktree, make the design
-   decision the agent should have STOPped on, and re-delegate the stage with a
-   prompt that states that decision. Patching a wrong approach costs more than
-   re-running the stage and leaves `main` with a shape nobody chose.
+    Before delegating fixes, ask whether the confirmed set says the _approach_
+    is wrong, not just the execution — a blocker in the design (wrong layer, an
+    invented contract, a misread plan) rather than a slipped detail. If so, do
+    not patch it into shape: discard or park the worktree, make the design
+    decision the agent should have STOPped on, and re-delegate the stage with a
+    prompt that states that decision. Patching a wrong approach costs more than
+    re-running the stage and leaves `main` with a shape nobody chose.
 
 6. **Apply the confirmed fixes — via a subagent, not in your own session.**
    Hand the whole confirmed set — file,
@@ -129,13 +129,13 @@ because the report says green — the report is a claim, not evidence.
    split the whole loop runs on. Only a runtime that truly cannot spawn a
    subagent applies the fixes itself — freeze the confirmed set first and work
    through it mechanically, without re-litigating findings mid-edit: the set
-   was already adversarially confirmed. Fix *everything* confirmed, minors included —
+   was already adversarially confirmed. Fix _everything_ confirmed, minors included —
    deferring a real minor just reopens it a stage later. (A lone trivial edit —
    one stale doc line — you may do inline rather than spawn an agent for it.)
 
 7. **Re-run the full gate after the fixes land.** Any edit — yours or the
    subagent's — reopens the gate. The most common self-inflicted wound is
-   committing after a fix without re-running the *full* gate: a passing typecheck
+   committing after a fix without re-running the _full_ gate: a passing typecheck
    is not a passing dead-code/format check.
 
 8. **Land the worktree on `main`.** First **join on the background gate from
@@ -147,7 +147,7 @@ because the report says green — the report is a claim, not evidence.
    stale local tip only defers the same conflicts to push time, after the gate
    evidence has gone stale. The verified work is uncommitted inside the
    worktree; a bare `git diff | git apply` would silently drop untracked files.
-   Instead, make the stage commit *inside the worktree* yourself —
+   Instead, make the stage commit _inside the worktree_ yourself —
    `git -C <worktree> add -A && git -C <worktree> commit` — then bring it into
    the orchestrator checkout with `git cherry-pick <sha>` (worktrees share the
    object database, so the sha is visible from `main`). If `main` has moved past
@@ -183,9 +183,9 @@ next. Two consequences:
 ## Closing the effort
 
 When the last planned stage lands, the effort is not done — it is merely
-all-stages-green. Per-stage verification proved each stage did what *its
-prompt* said; nothing yet proved the union of stage prompts covers the
-*original ask*. Gaps live exactly in that seam: requirements no stage prompt
+all-stages-green. Per-stage verification proved each stage did what _its
+prompt_ said; nothing yet proved the union of stage prompts covers the
+_original ask_. Gaps live exactly in that seam: requirements no stage prompt
 claimed, quality bars everyone assumed someone else owned, minors deferred to
 "a later stage" that never existed. Close with a final acceptance review:
 
@@ -218,10 +218,10 @@ These are the lessons that cost the most to relearn. Internalize them; they are
 why the loop looks the way it does.
 
 - **"Both gates green" ≠ equivalence.** Two gates passing on clean code only
-  proves neither *fires* on the current code — it says nothing about hypothetical
+  proves neither _fires_ on the current code — it says nothing about hypothetical
   violations. When you are proving a port/rewrite is equivalent to what it
   replaced, add a **negative test**: introduce the violation the rule must catch,
-  confirm *both* the old and new mechanism catch it, then revert. Green-on-clean
+  confirm _both_ the old and new mechanism catch it, then revert. Green-on-clean
   is necessary, not sufficient.
 
 - **Recon hallucinates; verify by symbol grep.** An external agent (and a review
@@ -235,7 +235,7 @@ why the loop looks the way it does.
 
 - **Confirm findings adversarially before acting on them.** A plausible finding
   is not a real one. Spawn an independent verifier per finding whose job is to
-  *refute* it by reading the compensating code, re-reading the diff, or
+  _refute_ it by reading the compensating code, re-reading the diff, or
   recognizing a sanctioned decision. Real defects survive; plausible-but-wrong
   ones get dropped and over-stated severities get downgraded. This keeps you
   from "fixing" things that were correct.
