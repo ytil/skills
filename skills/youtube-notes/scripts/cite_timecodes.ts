@@ -92,10 +92,10 @@ function readNote(path: string): { lines: string[]; sources: Sources } {
     return { lines, sources: { map, headerIdx } };
 }
 
-// Strip a body block down to the idea text: remove citation markup, the *(консенсус)*
+// Strip a body line down to the idea text: remove citation markup, the *(консенсус)*
 // marker, leading list/emphasis punctuation, and collapse whitespace.
-function ideaOf(block: string): string {
-    return block
+function ideaOf(line: string): string {
+    return line
         .replace(CITE_RE, "")
         .replace(/\*\(консенсус\)\*/g, "")
         .replace(/\s+/g, " ")
@@ -103,45 +103,19 @@ function ideaOf(block: string): string {
         .trim();
 }
 
-const BLOCK_START_RE = /^\s*(?:[-*+]|\d+[.)])\s|^#/;
-
-// Group body lines into logical blocks: a bullet plus its wrapped continuation lines, or a
-// run of consecutive non-empty lines. Bullets in these notes are long and soft-wrapped, so
-// their citations land on whatever line the text happened to break on — scanning physically
-// would hand the matcher a fragment ("картинок.") instead of the thesis it must locate.
-// Blocks are contiguous runs, so citation order — and thus occ_id — is unchanged.
-function blocksOf(body: string[]): string[] {
-    const blocks: string[] = [];
-    let cur: string[] = [];
-    const flush = () => {
-        if (cur.length) blocks.push(cur.join(" "));
-        cur = [];
-    };
-    for (const line of body) {
-        if (!line.trim()) {
-            flush();
-            continue;
-        }
-        if (BLOCK_START_RE.test(line)) flush();
-        cur.push(line);
-    }
-    flush();
-    return blocks;
-}
-
 // Walk the body (everything above the sources header) and yield one entry per citation,
 // in reading order — the occ_id is the index in this order, which both phases rely on.
 function occurrences(lines: string[], sources: Sources): Occurrence[] {
     const body = lines.slice(0, sources.headerIdx);
     const occ: Occurrence[] = [];
-    for (const block of blocksOf(body)) {
+    for (const line of body) {
         CITE_RE.lastIndex = 0;
-        if (!CITE_RE.test(block)) continue;
-        const idea = ideaOf(block);
-        const consensus = block.includes("консенсус");
+        if (!CITE_RE.test(line)) continue;
+        const idea = ideaOf(line);
+        const consensus = line.includes("консенсус");
         CITE_RE.lastIndex = 0;
         let m: RegExpExecArray | null;
-        while ((m = CITE_RE.exec(block))) {
+        while ((m = CITE_RE.exec(line))) {
             const n = Number(m[1] ?? m[3]);
             occ.push({
                 occ_id: occ.length,
