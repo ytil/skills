@@ -6,7 +6,10 @@ The mechanical facts behind the principles: where these files live, how they loa
 
 - **Format:** plain Markdown, no required schema — "a README for agents." Use whatever headings fit.
 - **Read by:** 20+ agents including OpenAI Codex, Cursor, Gemini CLI, Jules, Aider, GitHub Copilot / VS Code, Zed, Devin, Factory, Warp. (Notably **not** Claude Code — see interop below.)
-- **Monorepos:** place an `AGENTS.md` in each package. Agents read the **nearest** file walking up the tree, so the closest one wins. Keep the root file about repo-wide facts and each nested file about its own package.
+- **Monorepos:** place an `AGENTS.md` in each package — the root file for repo-wide facts, each nested file for its own package.
+- **Merge & precedence:** don't assume "nearest file wins." Codex **concatenates the whole chain** from the git root down, joined by blank lines, stopping when it reaches your current directory; closer files win only because they land _later_ in the combined prompt. Every level is still in context, so a root-vs-package contradiction is a live conflict the model resolves arbitrarily — it is not cleaned up by proximity (checklist check 8). Codex also loads a global `~/.codex/AGENTS.md` ahead of the project chain, and an `AGENTS.override.md` takes precedence over the `AGENTS.md` beside it at any level. Verified for Codex; other tools implementing the standard differ — confirm before relying on precedence.
+- **Size cap:** Codex stops adding files once the concatenated chain reaches `project_doc_max_bytes` (32 KiB default), so an oversized root file can silently push a package's own instructions out of the prompt entirely. Trim the root or raise the limit. Claude Code has no equivalent cap — it loads the whole chain and you pay in adherence instead.
+- **See what actually loaded:** `codex --ask-for-approval never "Summarize the current instructions."` makes Codex echo its guidance in precedence order.
 - **Popular sections:** project overview, build/test commands, code-style pointers, testing instructions, security considerations, commit/PR conventions, gotchas. (Treat "code style" with principle #6 in mind — point to the formatter, don't transcribe it.)
 
 ## CLAUDE.md (Claude Code)
