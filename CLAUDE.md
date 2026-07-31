@@ -4,7 +4,7 @@ Personal agent-skills monorepo, shipped as a Claude Code + Codex plugin marketpl
 
 ## Layout
 
-- `skills/<name>/SKILL.md` — one skill each: `agents-md`, `brainstorming-handoff`, `cross-review`, `stage-orchestrator`, `youtube-notes`, `zip-context`. Every skill also has `agents/openai.yaml` — its Codex-facing display name, description, and default prompt. Some carry `scripts/` (TypeScript or Python) and `references/`.
+- `skills/<name>/SKILL.md` — one skill each: `agents-md`, `brainstorming-handoff`, `youtube-notes`, `zip-context`. Every skill also has `agents/openai.yaml` — its Codex-facing display name, description, and default prompt. Some carry `scripts/` (TypeScript or Python) and `references/`.
 - `.claude-plugin/` — Claude Code `plugin.json` + `marketplace.json`.
 - `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` — Codex plugin.
 - `README.md` — human-facing skill list + layout tree.

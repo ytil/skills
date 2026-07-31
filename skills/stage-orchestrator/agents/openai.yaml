@@ -1,4 +1,0 @@
-interface:
-    display_name: "Stage Orchestrator"
-    short_description: "Delegate stages, verify hard, land on main"
-    default_prompt: "Use $stage-orchestrator when orchestrating a multi-stage effort over delegated work: author a self-contained stage prompt with a worktree contract for the external agent, or run the verify loop on a returned stage report — full gate, adversarial review, machine-checked claims — then land the verified worktree on main. For the review step follow references/review-runtime-codex.md (the single-context mechanics), not the Claude Workflow variant."
