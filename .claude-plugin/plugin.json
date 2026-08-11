@@ -1,7 +1,7 @@
 {
     "name": "ytil-skills",
-    "version": "1.8.13",
-    "description": "Personal agent skills: write/review AGENTS.md and CLAUDE.md, brainstorm ideas into a design handoff, pack a clean project-context zip, cross-review a task in Claude + Codex, orchestrate multi-stage delegated work with hard verification, and turn a YouTube video into a distilled note with screenshots.",
+    "version": "1.8.14",
+    "description": "Personal agent skills for agent context, brainstorming, cross-review, JavaScript data structures, error handling, GoF patterns, orchestration, YouTube notes, and clean context archives.",
     "author": {
         "name": "Dmitrii Ivannikov",
         "email": "ivannikov.web@gmail.com"
@@ -15,6 +15,9 @@
         "brainstorming",
         "zip-context",
         "cross-review",
+        "data-structures",
+        "error-handling",
+        "js-gof",
         "stage-orchestrator",
         "youtube-notes"
     ],
@@ -22,6 +25,9 @@
         "./skills/agents-md",
         "./skills/brainstorming-handoff",
         "./skills/cross-review",
+        "./skills/data-structures",
+        "./skills/error-handling",
+        "./skills/js-gof",
         "./skills/stage-orchestrator",
         "./skills/youtube-notes",
         "./skills/zip-context"

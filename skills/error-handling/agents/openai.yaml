@@ -1,0 +1,4 @@
+interface:
+    display_name: "Error Handling"
+    short_description: "Handle JavaScript and Node.js errors safely"
+    default_prompt: "Use $error-handling to implement or review JavaScript and Node.js error handling, propagation, retries, and graceful shutdown."

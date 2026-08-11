@@ -1,0 +1,4 @@
+interface:
+    display_name: "JavaScript Data Structures"
+    short_description: "Implement custom JavaScript data structures"
+    default_prompt: "Use $data-structures to choose or implement a custom JavaScript data structure with the right complexity and contracts."

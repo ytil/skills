@@ -1,0 +1,4 @@
+interface:
+    display_name: "JavaScript GoF Patterns"
+    short_description: "Apply creational and structural JS patterns"
+    default_prompt: "Use $js-gof to implement or review a creational or structural design pattern in JavaScript or TypeScript."
