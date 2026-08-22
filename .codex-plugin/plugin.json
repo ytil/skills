@@ -1,6 +1,6 @@
 {
     "name": "ytil-skills",
-    "version": "1.8.14",
+    "version": "1.8.15",
     "description": "Personal agent skills for agent context, brainstorming, cross-review, JavaScript data structures, error handling, GoF patterns, orchestration, YouTube notes, and clean context archives.",
     "author": {
         "name": "Dmitrii Ivannikov",

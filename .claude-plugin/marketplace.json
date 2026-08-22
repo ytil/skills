@@ -4,13 +4,19 @@
         "name": "Dmitrii Ivannikov",
         "email": "ivannikov.web@gmail.com"
     },
-    "description": "Personal agent skills: agents-md, brainstorming-handoff, cross-review, data-structures, error-handling, js-gof, stage-orchestrator, youtube-notes, zip-context",
+    "description": "Personal agent skills plus a separate Arc-adapted fork of Matt Pocock's engineering skills.",
     "plugins": [
         {
             "name": "ytil-skills",
             "source": ".",
             "description": "All skills from this repo, including JavaScript data structures, error handling, and creational and structural GoF patterns.",
-            "version": "1.8.14"
+            "version": "1.8.15"
+        },
+        {
+            "name": "mattpocock-skills-arc-version",
+            "source": "./plugins/mattpocock-skills-arc-version",
+            "description": "Matt Pocock's stable engineering and productivity skills, adapted to use Arc instead of Git.",
+            "version": "1.2.4"
         }
     ]
 }

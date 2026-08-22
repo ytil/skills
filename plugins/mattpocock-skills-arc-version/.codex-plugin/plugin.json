@@ -1,0 +1,34 @@
+{
+    "name": "mattpocock-skills-arc-version",
+    "version": "1.2.4",
+    "description": "Matt Pocock's engineering and productivity skills, adapted to use Arc instead of Git.",
+    "author": {
+        "name": "Matt Pocock (upstream), Dmitrii Ivannikov (Arc adaptation)",
+        "url": "https://github.com/mattpocock/skills"
+    },
+    "homepage": "https://github.com/mattpocock/skills",
+    "repository": "https://github.com/ytil/skills",
+    "license": "MIT",
+    "keywords": [
+        "arc",
+        "arcadia",
+        "engineering",
+        "skills",
+        "tdd",
+        "code-review",
+        "productivity"
+    ],
+    "skills": "./skills/",
+    "interface": {
+        "displayName": "Matt Pocock Skills — Arc Version",
+        "shortDescription": "Engineering workflows adapted for Arc and Arcadia.",
+        "longDescription": "Matt Pocock's stable engineering and productivity skills, with version-control workflows adapted from Git to Arc.",
+        "developerName": "Matt Pocock / Dmitrii Ivannikov",
+        "category": "Engineering",
+        "capabilities": ["Arc", "Engineering"],
+        "defaultPrompt": [
+            "Review my current Arc branch.",
+            "Diagnose a bug using Arc history."
+        ]
+    }
+}

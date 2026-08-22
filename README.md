@@ -2,6 +2,8 @@
 
 Personal agent skills for Codex, Claude Code, and other Agent Skills-compatible tools.
 
+The marketplace also ships `mattpocock-skills-arc-version`, a separate Arc-adapted fork of Matt Pocock's skills.
+
 ## Skills
 
 - `agents-md` - write or review AGENTS.md/CLAUDE.md agent-context files: eleven principles, a verification-first review checklist, and AGENTS.md↔CLAUDE.md interop. Tool mechanics cover Claude Code and Codex. Sourced from [HumanLayer's "Writing a good CLAUDE.md"](https://www.humanlayer.dev/blog/writing-a-good-claude-md).
@@ -14,6 +16,10 @@ Personal agent skills for Codex, Claude Code, and other Agent Skills-compatible 
 - `youtube-notes` - turn a YouTube video into a distilled Russian-language Obsidian note with screenshots of the important on-screen moments. TypeScript scripts drive `yt-dlp` + `ffmpeg`; run `bash skills/youtube-notes/scripts/init.sh` once before first use to install/restore dependencies.
 - `zip-context` - create a clean project-context zip archive for model handoff. Original repo: https://github.com/glebkudr/zip_context.
 
+## Additional plugin
+
+- `mattpocock-skills-arc-version` - the 25 stable skills from [Matt Pocock's `skills`](https://github.com/mattpocock/skills) plugin, pinned to [5b15a47](https://github.com/mattpocock/skills/commit/5b15a47f2d7150f545fbcacbfe381787fc0230dc). Skill files preserve the upstream text and formatting exactly except for Git-to-Arc adaptations; `in-progress` and `misc` remain excluded, matching the upstream plugin manifest.
+
 ## Layout
 
 ```text
@@ -25,6 +31,14 @@ Personal agent skills for Codex, Claude Code, and other Agent Skills-compatible 
   plugin.json          # Claude Code plugin manifest
 .codex-plugin/
   plugin.json          # Codex plugin manifest
+plugins/
+  mattpocock-skills-arc-version/
+    .claude-plugin/
+      plugin.json      # separate Claude Code plugin
+    .codex-plugin/
+      plugin.json      # separate Codex plugin
+    skills/             # 25 stable skills
+    LICENSE            # upstream MIT license
 skills/
   agents-md/
     SKILL.md
@@ -96,23 +110,27 @@ The imported Metarhia skills retain their upstream MIT notice in
 
 ### Install as a plugin
 
-The repo is a plugin marketplace for both Claude Code and Codex. Both plugins
-bundle all skills from `skills/`.
+The repo is a plugin marketplace for both Claude Code and Codex. The main
+`ytil-skills` plugin bundles all skills from the root `skills/` directory;
+`mattpocock-skills-arc-version` is packaged separately under `plugins/`.
 
 Claude Code (inside a `claude` session):
 
 ```text
 /plugin marketplace add ytil/skills
 /plugin install ytil-skills@ytil-skills
+/plugin install mattpocock-skills-arc-version@ytil-skills
 ```
 
-Installed skills are invoked as `ytil-skills:<skill-name>`.
+Installed skills are invoked as `ytil-skills:<skill-name>` or
+`mattpocock-skills-arc-version:<skill-name>`, depending on the plugin.
 
 Codex:
 
 ```bash
 codex plugin marketplace add ytil/skills
 codex plugin add ytil-skills@ytil-skills
+codex plugin add mattpocock-skills-arc-version@ytil-skills
 ```
 
 Or browse via `/plugins` in the Codex TUI.

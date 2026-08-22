@@ -1,5 +1,8 @@
 node_modules/
 package-lock.json
 
+# preserve the upstream formatting; only Arc-specific edits are allowed
+plugins/mattpocock-skills-arc-version/skills/
+
 # local worktree copies of the repo — not ours to format
 .claude/
