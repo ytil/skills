@@ -2,7 +2,8 @@
     "name": "skills",
     "private": true,
     "scripts": {
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "test": "node --test tests/*.test.cjs"
     },
     "prettier": {
         "tabWidth": 4

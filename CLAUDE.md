@@ -7,7 +7,7 @@ Personal agent-skills monorepo, shipped as a Claude Code + Codex plugin marketpl
 - `skills/<name>/SKILL.md` — one skill each: `agents-md`, `brainstorming-handoff`, `cross-review`, `data-structures`, `error-handling`, `js-gof`, `stage-orchestrator`, `youtube-notes`, `zip-context`. Every skill also has `agents/openai.yaml` — its Codex-facing display name, description, and default prompt. Some carry `scripts/` (TypeScript or Python) and `references/`.
 - `.claude-plugin/` — Claude Code `plugin.json` + `marketplace.json`.
 - `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` — Codex plugin.
-- `plugins/mattpocock-skills-arc-version/` — separate MIT-licensed fork of Matt Pocock's 25 stable skills, with Arc VCS instructions and its own Claude/Codex manifests.
+- `plugins/mattpocock-skills-arc-version/` — separate MIT-licensed fork of Matt Pocock's 27 stable skills, with Arc VCS instructions and its own Claude/Codex manifests.
 - `README.md` — human-facing skill list + layout tree.
 - `AGENTS.md` — a symlink to this file (Codex reads it). Edit `CLAUDE.md`; never replace the symlink with a copy.
 - `*-workspace/` — gitignored skill-eval scratch; never edit or ship it.
@@ -16,7 +16,8 @@ Personal agent-skills monorepo, shipped as a Claude Code + Codex plugin marketpl
 
 - `npm run format` — Prettier, 4-space indent (see `package.json`). It walks the **whole repo**, so a run after touching one skill can reformat others; check the diff before committing.
 - `plugins/mattpocock-skills-arc-version/skills/` is excluded via `.prettierignore`: preserve its upstream text and formatting byte-for-byte except for deliberate Git-to-Arc edits.
-- No build or tests. The one mechanical invariant is the manifest versions — after bumping, confirm all three agree:
+- `npm test` — focused companion-server and wizard regression checks (Node.js 22+, Bash); the companion test binds a loopback port. No build.
+- Manifest versions — after bumping, confirm all three agree:
   `grep -h '"version"' .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json`
 - For `mattpocock-skills-arc-version`, keep its two nested plugin manifests and its entry in `.claude-plugin/marketplace.json` on the same version.
 

@@ -1,140 +1,198 @@
 ---
 name: brainstorming-handoff
-description: "Clarify feature, refactor, product, or behavior ideas before implementation. Explore intent, compare approaches, get design approval, and end with a structured handoff."
+description: "Clarify feature, refactor, product, or behavior ideas before implementation. Explore intent, distinguish decisions from assumptions, and end with a reviewed design handoff."
 ---
 
 # Brainstorming Ideas Into Design Handoffs
 
-Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
+You are very good at building. You build what you believe your human
+partner wants, and that belief is usually thinner than it feels. This
+skill is for finding out what they actually want, and why, then handing
+that design to the next phase. Its terminal state is a reviewed handoff;
+implementation, planning, and tracker creation require a separate request.
 
-Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.
+People often haven't finished working out what they want. Good questions
+help them think it through. When you understand the why, you make the
+hundred decisions they never mention the way they would have made them.
+
+## First: What Do You Actually Know?
+
+Before you reply, ask yourself: what do I know about what they want, and
+why?
+
+- **Everything that matters is in the request** ("make the icon cornflower
+  blue"). This is a quick, clear task. Give a concise handoff without an interview.
+  Implement it only if the user has explicitly requested implementation.
+- **Something non-trivial is missing.** Start the conversation.
+
+## Your First Message
+
+Your first message is two things, in this order:
+
+1. One line letting them know that if they'd rather skip the questions and
+   have you draft the handoff, they can say so. If they take you up on it,
+   state significant choices and assumptions, then write the handoff.
+   Skipping questions does not authorize a new phase.
+2. One open question that gets them describing. Ask about a real moment
+   or a concrete picture: "What's the moment you find yourself wishing
+   this existed?" or "Tell me about the people who'll be in the room."
+
+That's the whole message.
+
+## The Conversation
+
+Each message ends with one question: a single sentence with no list of
+example answers hanging off it. Use plain language, pitched just a little
+above where your human partner is. Match their vocabulary; never use
+process jargon.
+
+Be clear and concise. Lead with what matters. Avoid jargon. When you
+report what you found, give them the most important findings and offer
+the rest.
+
+**Get them describing.** Open questions come first. Their own words carry
+intent that your options can't. Offer a short menu only when they're
+stuck. When they say "just guess" or "what do you think?", propose
+something concrete.
+
+**How it gets made.** Every project rests on choices about medium, tools,
+materials, and resources: the platform, programming language, and
+libraries for an app; the medium for a piece of art. Find out early which
+of those choices they want to make, which they're handing to you, and what
+they already have to work with. Someone with strong views or skills will
+want to talk it through. Someone counting on you needs sensible defaults,
+said in plain words. When there's existing work, build on what it already
+uses. Any choice you make goes in the design as your call, never as
+something they agreed to.
+
+**Ground to cover.** This is territory, not a script. Never read these
+out as questions:
+
+- what kind of thing this is, and what makes it special
+- why now, and what success looks like to them
+- goals, non-goals, and anti-goals (what would make this a failure even
+  if it technically works)
+- prior art: what they've seen elsewhere, loved or hated
+- current state: what exists now, what they've tried
+- the details they care about
+
+**Questions that work** anchor in specifics: "Walk me through the last
+time...", "If it could only do one of these well, which?", "What would
+make you wince if I got it wrong?" A guess they can correct ("I'm
+guessing this is because X keeps biting you?") often beats a question.
+
+**Ground the discussion.** Read relevant project files and docs before
+asking questions they already answer. If useful research would widen
+the requested scope, explain what you would investigate and ask first.
+
+**Think wide privately.** Before you propose anything, come up with
+several ideas and drop the weak ones, including any that fight what
+they've told you about why. Show the comparison only when it helps them
+decide.
+
+**Show, don't tell.** Offer the visual companion (below) whenever seeing
+would help more than reading:
+
+- something they'll look at: a screen, a page, a printout, a sign
+- a layout or arrangement: of a screen, a room, a schedule
+- a flow or a sequence of steps
+- options that would look different from each other
+- a structure that's easier to see than read: a diagram, a timeline, a map
+
+Once they've accepted, use it for mockups to react to, side-by-side
+options, and throwaway prototypes they can click.
+
+**Spike to feel things out.** Agentic work is waterfall, but very, very
+fast. A quick throwaway build is often the cheapest way to learn what
+they want or whether something works. Offer one when it would help.
+When they just want to spike, get out of the way. Spikes get no tests
+or minimal ones, aren't bulletproof, and skip the plan, implementation,
+and review process. Bring what the spike taught you back into the
+conversation.
+
+## Play It Back
+
+Play back as you go. As soon as you understand one part well enough to
+describe it (what it's for and who it serves, say, or how one piece
+behaves), describe that part back in about 200-300 words, then return to
+questions about the next part. Playback and questions alternate through
+the whole conversation; the last chunk covers whatever is left.
+
+Mark anything you're guessing as your guess; only what they said goes in
+as theirs. End each chunk by asking what's wrong or missing.
+
+Before you send a chunk, check it: does it describe something they'll
+look at, like a page, a screen, a schedule, or a printout? If so, and
+they haven't seen the visual companion offer yet, send the offer instead
+(its own message, below) and hold the chunk for the next message. Once
+they've accepted, put a mockup next to the description.
+
+## Size the Work
+
+Once you understand what they want, pick a size and say it in plain
+words. They can override it.
+
+| Size                            | The full description      | Then                      |
+| ------------------------------- | ------------------------- | ------------------------- |
+| A quick, clear task             | the request itself        | concise handoff           |
+| A small change                  | in chat                   | reviewed handoff in chat  |
+| A project with a written design | a written design document | reviewed handoff document |
+
+If it grows mid-task, stop, say so, and step up a size.
+
+If this is really several independent projects, say so, agree on an
+order, and brainstorm them one at a time.
+
+## The Written Design
+
+For a project, write a plain document a talented builder in the domain
+could plan from without going back to your human partner. Cover:
+
+- intent and the why
+- goals, non-goals, anti-goals
+- constraints
+- the parts of the how they decided, as they decided them
+- what's left to the builder
+
+**Where it goes:** in chat by default. Save it only when the user asks
+or the project has a docs convention. Use that convention, otherwise
+`docs/brainstorming/YYYY-MM-DD-<topic>-handoff.md`. Commit only when asked.
+
+**Builder check:** dispatch a fresh subagent with
+`builder-check-prompt.md` in this directory. Pass the handoff text directly
+if no file was saved. When you tell your human
+partner you're writing it up, say a reviewer will read it first and you
+may come back once with a few questions. Don't hand over the document
+until the check is back. Sort what the builder asks into three piles:
+
+- **Answered already** by the conversation or the project: put the answer
+  in the document.
+- **Minor:** a sensible builder could settle it without changing what gets
+  built. Settle it yourself and mark it in the document as your call.
+- **Theirs:** only your human partner can answer it, and the answer changes
+  what gets built.
+
+Bring the "theirs" pile in one message, most important first. Update the
+document with their answers, then hand it over with a short list of the
+calls you made so they can check those while reading. That's the only
+round of questions the check produces. Without a subagent tool, read the
+document as that builder yourself.
 
 <HARD-GATE>
-Do NOT invoke any implementation skill, write any code, scaffold any project, create OpenSpec artifacts, create tracker tasks, or take any implementation action until you have presented a design and the user has approved it. This applies to EVERY project regardless of perceived simplicity.
+Nothing gets built until your human partner approves the full
+description: in chat for a small change, the document for a project.
+Building includes writing product code, scaffolding, installing
+dependencies, creating projects, and invoking an implementation skill.
+Reading and exploring are fine.
+
+A spike they explicitly requested or approved may be built; it
+stays labeled throwaway, and keeping what it produced is a new request
+that comes back through this gate.
+
+After the handoff is approved, stop. Start planning, implementation,
+OpenSpec artifacts, or tracker creation only when explicitly requested.
+Approval of the handoff alone does not authorize those actions.
 </HARD-GATE>
-
-## Anti-Pattern: "This Is Too Simple To Need A Design"
-
-Every project goes through this process. A todo list, a single-function utility, a config change — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval.
-
-## Checklist
-
-You MUST create a task for each of these items and complete them in order:
-
-1. **Explore project context** — check files, docs, recent commits
-2. **Offer visual companion** (if topic will involve visual questions) — this is its own message, not combined with a clarifying question. See the Visual Companion section below.
-3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
-4. **Propose 2-3 approaches** — with trade-offs and your recommendation
-5. **Present design** — in sections scaled to their complexity, get user approval after each section
-6. **Write handoff** — produce a structured design handoff; save it only if the user asks or the project already has a docs convention
-7. **Handoff self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
-8. **User reviews handoff** — ask user to review the handoff before proceeding
-9. **Stop at the handoff boundary** — do not start implementation, OpenSpec creation, tracker creation, or planning unless the user explicitly asks for the next phase
-
-## Process Flow
-
-```dot
-digraph brainstorming {
-    "Explore project context" [shape=box];
-    "Visual questions ahead?" [shape=diamond];
-    "Offer Visual Companion\n(own message, no other content)" [shape=box];
-    "Ask clarifying questions" [shape=box];
-    "Propose 2-3 approaches" [shape=box];
-    "Present design sections" [shape=box];
-    "User approves design?" [shape=diamond];
-    "Write handoff" [shape=box];
-    "Handoff self-review\n(fix inline)" [shape=box];
-    "User reviews handoff?" [shape=diamond];
-    "Stop and wait\nfor next-phase request" [shape=doublecircle];
-
-    "Explore project context" -> "Visual questions ahead?";
-    "Visual questions ahead?" -> "Offer Visual Companion\n(own message, no other content)" [label="yes"];
-    "Visual questions ahead?" -> "Ask clarifying questions" [label="no"];
-    "Offer Visual Companion\n(own message, no other content)" -> "Ask clarifying questions";
-    "Ask clarifying questions" -> "Propose 2-3 approaches";
-    "Propose 2-3 approaches" -> "Present design sections";
-    "Present design sections" -> "User approves design?";
-    "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write handoff" [label="yes"];
-    "Write handoff" -> "Handoff self-review\n(fix inline)";
-    "Handoff self-review\n(fix inline)" -> "User reviews handoff?";
-    "User reviews handoff?" -> "Write handoff" [label="changes requested"];
-    "User reviews handoff?" -> "Stop and wait\nfor next-phase request" [label="approved"];
-}
-```
-
-**The terminal state is a reviewed handoff and a pause.** Do NOT invoke writing-plans, OpenSpec commands, tracker commands, frontend-design, mcp-builder, or any implementation skill unless the user explicitly asks for that next phase.
-
-## The Process
-
-**Understanding the idea:**
-
-- Check out the current project state first (files, docs, recent commits)
-- Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
-- If the project is too large for a single handoff, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own handoff before moving to the next phase.
-- For appropriately-scoped projects, ask questions one at a time to refine the idea
-- Prefer multiple choice questions when possible, but open-ended is fine too
-- Only one question per message - if a topic needs more exploration, break it into multiple questions
-- Focus on understanding: purpose, constraints, success criteria
-
-**Exploring approaches:**
-
-- Propose 2-3 different approaches with trade-offs
-- Present options conversationally with your recommendation and reasoning
-- Lead with your recommended option and explain why
-
-**Presenting the design:**
-
-- Once you believe you understand what you're building, present the design
-- Scale each section to its complexity: a few sentences if straightforward, up to 200-300 words if nuanced
-- Ask after each section whether it looks right so far
-- Cover: architecture, components, data flow, error handling, testing
-- Be ready to go back and clarify if something doesn't make sense
-
-**Design for isolation and clarity:**
-
-- Break the system into smaller units that each have one clear purpose, communicate through well-defined interfaces, and can be understood and tested independently
-- For each unit, you should be able to answer: what does it do, how do you use it, and what does it depend on?
-- Can someone understand what a unit does without reading its internals? Can you change the internals without breaking consumers? If not, the boundaries need work.
-- Smaller, well-bounded units are also easier for you to work with - you reason better about code you can hold in context at once, and your edits are more reliable when files are focused. When a file grows large, that's often a signal that it's doing too much.
-
-**Working in existing codebases:**
-
-- Explore the current structure before proposing changes. Follow existing patterns.
-- Where existing code has problems that affect the work (e.g., a file that's grown too large, unclear boundaries, tangled responsibilities), include targeted improvements as part of the design - the way a good developer improves code they're working in.
-- Don't propose unrelated refactoring. Stay focused on what serves the current goal.
-
-## After the Design
-
-**Handoff:**
-
-- Produce a structured handoff in chat by default.
-- If the user asks for a file, save it to `docs/brainstorming/YYYY-MM-DD-<topic>-handoff.md` unless the project has a better docs convention.
-- Do not commit the handoff unless the user explicitly asks.
-
-**Handoff Self-Review:**
-After writing the handoff, look at it with fresh eyes:
-
-1. **Placeholder scan:** Any "TBD", "TODO", incomplete sections, or vague requirements? Fix them.
-2. **Internal consistency:** Do any sections contradict each other? Does the architecture match the feature descriptions?
-3. **Scope check:** Is this focused enough for a single next-phase workflow, or does it need decomposition?
-4. **Ambiguity check:** Could any requirement be interpreted two different ways? If so, pick one and make it explicit.
-
-Fix any issues inline. No need to re-review — just fix and move on.
-
-**User Review Gate:**
-After the handoff review loop passes, ask the user to review it before proceeding:
-
-> "Handoff ready. Please review it and let me know if you want changes before we move into the next phase."
-
-Wait for the user's response. If they request changes, make them and re-run the handoff review loop. Only proceed once the user approves.
-
-**Next phase:**
-
-- If the user mentions OpenSpec, offer to convert the handoff into an OpenSpec change.
-- If the user wants a short direct implementation cycle, offer a concise implementation checklist.
-- If the user wants task tracking, offer Beads, GitHub Issues, Linear, or the project's existing tracker.
-- Do NOT start any next phase until the user explicitly asks.
 
 ## Handoff Formats
 
@@ -246,35 +304,38 @@ Mapping to OpenSpec:
 - `Acceptance Criteria` and `Suggested Requirements` map to spec deltas.
 - `Suggested Task Outline` maps to `tasks.md`.
 
-## Key Principles
+## Red Flags
 
-- **One question at a time** - Don't overwhelm with multiple questions
-- **Multiple choice preferred** - Easier to answer than open-ended when possible
-- **YAGNI ruthlessly** - Remove unnecessary features from all designs
-- **Explore alternatives** - Always propose 2-3 approaches before settling
-- **Incremental validation** - Present design, get approval before moving on
-- **Be flexible** - Go back and clarify when something doesn't make sense
+| Thought                                     | Reality                                                                                 |
+| ------------------------------------------- | --------------------------------------------------------------------------------------- |
+| "I'll offer options to save them effort"    | Options steer. Ask them to describe it first.                                           |
+| "I'll fill in sensible defaults"            | Good. Say them out loud. A default they never heard is one they couldn't reject.        |
+| "I should explain the process first"        | Ask your question. The process shows itself.                                            |
+| "They said 'sounds good' to the idea"       | Approval covers what you showed them. A description you haven't written isn't approved. |
+| "The spike works, I'll keep building on it" | Keeping it is a new request. Back through the gate.                                     |
 
 ## Visual Companion
 
-A browser-based companion for showing mockups, diagrams, and visual options during brainstorming. Available as a tool — not a mode. Accepting the companion means it's available for questions that benefit from visual treatment; it does NOT mean every question goes through the browser.
+A browser tab for showing mockups, diagrams, and prototypes. It's a
+tool, not a mode: accepting it doesn't send every question to the
+browser.
 
-**Offering the companion:** When you anticipate that upcoming questions will involve visual content (mockups, layouts, diagrams), offer it once for consent:
+**Offer it just-in-time.** Offer it the first time one of the moments
+above comes up, never upfront. The offer is its own message with nothing
+else in it:
 
-> "Some of what we're working on might be easier to explain if I can show it to you in a web browser. I can put together mockups, diagrams, comparisons, and other visuals as we go. This feature is still new and can be token-intensive. Want to try it? (Requires opening a local URL)"
+> "This might be easier if I show you. Want me to open a browser tab with some mockups?"
 
-**This offer MUST be its own message.** Do not combine it with clarifying questions, context summaries, or any other content. The message should contain ONLY the offer above and nothing else. Wait for the user's response before continuing. If they decline, proceed with text-only brainstorming.
+If they decline, stay in text and don't offer again unless they raise it.
 
-**Per-question decision:** Even after the user accepts, decide FOR EACH QUESTION whether to use the browser or the terminal. The test: **would the user understand this better by seeing it than reading it?**
+**Per question, ask: would they understand this better by seeing it?**
+Mockups, layouts, diagrams, and side-by-side designs go in the browser.
+Requirements, scope, tradeoffs, and conceptual choices stay in text. A
+question about a UI topic isn't automatically a visual question.
 
-- **Use the browser** for content that IS visual — mockups, wireframes, layout comparisons, architecture diagrams, side-by-side visual designs
-- **Use the terminal** for content that is text — requirements questions, conceptual choices, tradeoff lists, A/B/C/D text options, scope decisions
-
-A question about a UI topic is not automatically a visual question. "What does personality mean in this context?" is a conceptual question — use the terminal. "Which wizard layout works better?" is a visual question — use the browser.
-
-If they agree to the companion, read the detailed guide before proceeding:
-`skills/brainstorming-handoff/visual-companion.md`
+If they accept, read `visual-companion.md` in this directory before
+starting the server.
 
 ## Attribution
 
-This skill is adapted from the Superpowers `brainstorming` skill by Jesse Vincent / obra. It keeps the collaborative design workflow while replacing the Superpowers implementation-plan transition with a general handoff boundary.
+Adapted from [Superpowers brainstorming v7.0.0](https://github.com/obra/superpowers/tree/bb92a77741419a4ab5f06e711a283343f1ada0c3/skills/brainstorming) by Jesse Vincent / obra. The local variant preserves the handoff boundary, optional document saving, OpenSpec handoff format, and `.brainstorming-handoff/` session directory. The companion uses local branding without upstream image telemetry.

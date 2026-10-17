@@ -1,6 +1,6 @@
 {
     "name": "mattpocock-skills-arc-version",
-    "version": "1.2.4",
+    "version": "2.0.0",
     "description": "Matt Pocock's engineering and productivity skills, adapted to use Arc instead of Git.",
     "author": {
         "name": "Matt Pocock (upstream), Dmitrii Ivannikov (Arc adaptation)",

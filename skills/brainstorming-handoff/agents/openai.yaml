@@ -1,6 +1,6 @@
 interface:
     display_name: "Brainstorming Handoff"
-    short_description: "Clarify ideas into a design handoff"
+    short_description: "Clarify intent into a reviewed handoff"
     brand_color: "#2563EB"
     default_prompt: "Use $brainstorming-handoff to clarify this idea and end with a reviewed design handoff."
 

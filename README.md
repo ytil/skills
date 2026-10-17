@@ -7,7 +7,7 @@ The marketplace also ships `mattpocock-skills-arc-version`, a separate Arc-adapt
 ## Skills
 
 - `agents-md` - write or review AGENTS.md/CLAUDE.md agent-context files: eleven principles, a verification-first review checklist, and AGENTS.md↔CLAUDE.md interop. Tool mechanics cover Claude Code and Codex. Sourced from [HumanLayer's "Writing a good CLAUDE.md"](https://www.humanlayer.dev/blog/writing-a-good-claude-md).
-- `brainstorming-handoff` - clarify feature, refactor, product, or behavior ideas before implementation and end with a structured design handoff. Inspired by the [Superpowers](https://github.com/obra/superpowers) `brainstorming` skill by Jesse Vincent / obra.
+- `brainstorming-handoff` - clarify intent, separate decisions from assumptions, and end with a reviewed design handoff. Includes an authenticated visual companion. Adapted from the [Superpowers](https://github.com/obra/superpowers) `brainstorming` skill by Jesse Vincent / obra.
 - `cross-review` - run any read-only task (code analysis, diagnosis, research, fact-finding) through Claude and Codex in parallel, cross-review the two answers, and synthesize one verdict. Subscription auth only (Claude Agent SDK + Codex SDK).
 - `data-structures` - choose and implement custom JavaScript data structures with explicit complexity and contracts. Imported from [Timur Shemsedinov's original skill](https://github.com/metarhia/metaskills/blob/main/skills/data-structures/SKILL.md), with its YAML description quoted for portability.
 - `error-handling` - apply JavaScript/TypeScript and Node.js error classification, propagation, retry, and shutdown patterns. Adapted from [Timur Shemsedinov's original skill](https://github.com/metarhia/metaskills/blob/main/skills/error-handling/SKILL.md).
@@ -18,7 +18,7 @@ The marketplace also ships `mattpocock-skills-arc-version`, a separate Arc-adapt
 
 ## Additional plugin
 
-- `mattpocock-skills-arc-version` - the 25 stable skills from [Matt Pocock's `skills`](https://github.com/mattpocock/skills) plugin, pinned to [5b15a47](https://github.com/mattpocock/skills/commit/5b15a47f2d7150f545fbcacbfe381787fc0230dc). Skill files preserve the upstream text and formatting exactly except for Git-to-Arc adaptations; `in-progress` and `misc` remain excluded, matching the upstream plugin manifest.
+- `mattpocock-skills-arc-version` - the 27 stable skills from [Matt Pocock's `skills`](https://github.com/mattpocock/skills) plugin, pinned to [49dd158](https://github.com/mattpocock/skills/commit/49dd158d1076134a641b33efb035946536778336) (upstream 1.3.1). Skill files preserve the upstream text and formatting exactly except for Git-to-Arc adaptations; `in-progress` and `misc` remain excluded, matching the upstream plugin manifest.
 
 ## Layout
 
@@ -37,7 +37,7 @@ plugins/
       plugin.json      # separate Claude Code plugin
     .codex-plugin/
       plugin.json      # separate Codex plugin
-    skills/             # 25 stable skills
+    skills/             # 27 stable skills
     LICENSE            # upstream MIT license
 skills/
   agents-md/
@@ -49,6 +49,11 @@ skills/
       openai.yaml
   brainstorming-handoff/
     SKILL.md
+    builder-check-prompt.md
+    visual-companion.md
+    agents/
+      openai.yaml
+    scripts/           # visual companion server, client, and launchers
   cross-review/
     SKILL.md
     agents/
@@ -101,10 +106,51 @@ skills/
       openai.yaml
     scripts/
       zip_context.py
+tests/
+  upstream-regressions.test.cjs
 ```
 
 The imported Metarhia skills retain their upstream MIT notice in
 [`THIRD_PARTY_LICENSES/metarhia-metaskills-MIT.txt`](THIRD_PARTY_LICENSES/metarhia-metaskills-MIT.txt).
+Superpowers attribution is preserved in
+[`THIRD_PARTY_LICENSES/superpowers-MIT.txt`](THIRD_PARTY_LICENSES/superpowers-MIT.txt);
+Matt Pocock's license and the `pr` skill's HumanLayer credit ship inside the separate plugin.
+
+## Upstream audit — 2026-10-17
+
+| Local copy                                    | Checked source                                                                                                                        | Result / local adaptations                                                                                                                                                                                      |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mattpocock-skills-arc-version`               | [1.3.1 / 49dd158](https://github.com/mattpocock/skills/tree/49dd158d1076134a641b33efb035946536778336)                                 | Updated from `5b15a47`; all 27 stable skills. Arc commands, full hashes, bounded history, worktree preservation, and unpublished Arcanum PRs retained/adapted.                                                  |
+| `brainstorming-handoff`                       | [Superpowers 7.0.0 / bb92a77](https://github.com/obra/superpowers/tree/bb92a77741419a4ab5f06e711a283343f1ada0c3/skills/brainstorming) | Updated workflow and companion together. Preserves general/OpenSpec handoff formats, optional saving, explicit next-phase requests, and `.brainstorming-handoff/`. Local branding; no upstream image telemetry. |
+| `data-structures`, `error-handling`, `js-gof` | [Metarhia 1.0.5 / fe4c423](https://github.com/metarhia/metaskills/tree/fe4c4230ea054e4b354d9e81400e26299f1be6d7)                      | No newer source than the import. Keep YAML quoting, formatting, and corrected code examples; do not overwrite these with the raw source. Other Metarhia skills are not dependencies of these three.             |
+| `zip-context`                                 | [6fc58ed](https://github.com/glebkudr/zip_context/tree/6fc58edf7bc2f54d556953956bb06f570e48e332)                                      | No newer source than the import. Keep manual ignore-file ownership, `.gitignore`/`.arcignore` fallback, and the local archive-selection contract.                                                               |
+| `agents-md`                                   | [HumanLayer article](https://www.humanlayer.dev/blog/writing-a-good-claude-md), dated 2025-11-25                                      | Guidance source, not a versioned skill dependency. Article checked; local Claude Code/Codex mechanics were not re-audited.                                                                                      |
+
+`cross-review`, `stage-orchestrator`, and `youtube-notes` have no declared external skill source to synchronize. SDK, CLI, and package updates are outside this audit.
+
+### Compatibility in Matt Pocock plugin 2.0.0
+
+- Adds `implement-spec`, `pr`, and `retro`; removes `resolving-merge-conflicts`, as upstream does. Use the separate `arc` skill for Arc conflicts.
+- Domain documents now use `GLOSSARY.md`, `GLOSSARY-MAP.md`, and `GLOSSARY-FORMAT.md`. Before using the updated workflows in an existing project, migrate its old `CONTEXT.md` / `CONTEXT-MAP.md` domain documents and their pointers. This update does not edit consumer projects.
+- `implement-spec` uses Arc worktrees and leaves Arcanum PRs unpublished until explicitly requested. The installed `arc` skill is preferred; Arc CLI help is the fallback.
+
+### Skill dependencies
+
+Install the Matt Pocock plugin as a unit. Copying a single skill directory does not install its sibling dependencies:
+
+| Caller                          | Sibling skills it loads                                               |
+| ------------------------------- | --------------------------------------------------------------------- |
+| `grill-me`                      | `grilling`                                                            |
+| `grill-with-docs`               | `grilling`, `domain-modeling`                                         |
+| `implement`, `implement-spec`   | `tdd`, `code-review`                                                  |
+| `tdd`                           | `codebase-design` when interface design is needed                     |
+| `improve-codebase-architecture` | `codebase-design`, `grilling`, `domain-modeling`                      |
+| `wayfinder`                     | `research`, `prototype`, `grilling`, `domain-modeling` by ticket type |
+| `retro`                         | `writing-for-agents`                                                  |
+
+The tracker workflows also require the project configuration written by `setup-matt-pocock-skills`; that skill is included. `ask-matt` routes the user to the bundled workflows. The `pr` skill embeds its credited `show-me` guidance, so installing `show-me` is unnecessary. Root skills require no other skill installation; `brainstorming-handoff` includes its builder-check prompt and companion and does not call `superpowers:writing-plans`.
+
+Run `npm test` for the companion authorization/asset confinement and wizard `.env` regression checks. Native Windows behavior and real agent sessions are not covered.
 
 ## Usage
 
