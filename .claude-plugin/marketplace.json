@@ -10,13 +10,13 @@
             "name": "ytil-skills",
             "source": ".",
             "description": "All skills from this repo, including JavaScript data structures, error handling, and creational and structural GoF patterns.",
-            "version": "1.9.0"
+            "version": "1.9.1"
         },
         {
             "name": "mattpocock-skills-arc-version",
             "source": "./plugins/mattpocock-skills-arc-version",
-            "description": "Matt Pocock's stable engineering and productivity skills, adapted to use Arc instead of Git.",
-            "version": "2.0.0"
+            "description": "Matt Pocock's stable engineering and productivity skills for Arc, Arcanum, and Tracker.",
+            "version": "2.0.1"
         }
     ]
 }

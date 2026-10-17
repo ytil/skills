@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Move issues on the project issue tracker through a small state machine of triage roles.
 
-If this repo treats external pull requests as a request surface (see the issue-tracker config), triage covers them too: **a PR is an issue with attached code**, using the same roles, same states, and same machine, with a few deltas marked "for a PR" below. Resolve a bare `#42` to an issue or PR per the tracker config.
+If this repo treats external pull requests as a request surface (see the issue-tracker config), triage covers them too: **a PR is an issue with attached code**, using the same roles, same states, and same machine, with a few deltas marked "for a PR" below. Resolve Tracker keys and Arcanum PR URLs separately per the tracker config. Use the configured Tracker tools for issues and Arcanum tools for PRs; local checkout and diffs use Arc.
 
 Every comment or issue posted to the issue tracker during triage **must** start with this disclaimer:
 
@@ -49,8 +49,8 @@ State transitions: an unlabeled issue normally goes to `needs-triage` first; fro
 The maintainer invokes `/triage` and describes what they want in natural language. Interpret the request and act. Examples:
 
 - "Show me anything that needs my attention"
-- "Let's look at #42" (issue or PR)
-- "Move #42 to ready-for-agent"
+- "Let's look at PROJECT-42" (or an Arcanum PR URL)
+- "Move PROJECT-42 to ready-for-agent"
 - "What's ready for agents to pick up?"
 
 ## Show what needs attention
@@ -87,7 +87,7 @@ Show counts and a one-line summary per item. Let the maintainer pick.
 
 ## Quick state override
 
-If the maintainer says "move #42 to ready-for-agent", trust them and apply the role directly. Confirm what you're about to do (role changes, comment, close), then act. Skip grilling. If moving to `ready-for-agent` without a grilling session, ask whether they want to write an agent brief.
+If the maintainer says "move PROJECT-42 to ready-for-agent", trust them and apply the role directly. Confirm what you're about to do (role changes, comment, close), then act. Skip grilling. If moving to `ready-for-agent` without a grilling session, ask whether they want to write an agent brief.
 
 ## Needs-info template
 

@@ -26,7 +26,7 @@ Before going further, confirm `arc merge-base` resolves the fixed point and the 
 
 Look for the originating spec, in this order:
 
-1. Issue references in the commit messages (`#123`, `Closes #45`, GitLab `!67`, etc.), fetched via the workflow in the tracker doc.
+1. Issue references in the commit messages (`PROJECT-123` or a linked Tracker issue), fetched via the workflow in the tracker doc.
 2. A path the user passed as an argument.
 3. A spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
 4. If nothing is found, ask the user where the spec is. If they say there isn't one, the **Spec** sub-agent will skip and report "no spec available".

@@ -157,6 +157,7 @@ write_env SAMPLE 'updated value'
 [[ "$(_existing SAMPLE)" == 'updated value' ]]
 if ask SAMPLE 'Value' < /dev/null; then exit 1; fi
 if ask_secret SAMPLE 'Secret' < /dev/null; then exit 1; fi
+finish
 `,
             ],
             {

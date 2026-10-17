@@ -37,16 +37,15 @@ Lead each section with the recommended answer so the user can accept it in a wor
 
 **Section A: Issue tracker.**
 
-> Explainer: The "issue tracker" is where issues live for this repo. Skills like `to-tickets`, `triage`, and `to-spec` read from and write to it. They need to know whether to call `gh issue create`, write a markdown file under `.scratch/`, or follow some other workflow you describe. Pick the place you actually track work for this repo.
+> Explainer: The "issue tracker" is where issues live for this repo. Skills like `to-tickets`, `triage`, and `to-spec` read from and write to it. They need to know whether to use the configured Tracker MCP/CLI, write a markdown file under `.scratch/`, or follow another documented workflow. Pick the place you actually track work for this repo.
 
-Default posture: do not infer the issue tracker from Arc; an Arc checkout has no GitHub/GitLab remote. If repo docs or existing config name a tracker, propose that. Otherwise (or if the user prefers), offer:
+Default posture: Arc manages source code; the issue tracker is configured separately. If repo docs or existing config name a tracker, propose that. Otherwise (or if the user prefers), offer:
 
-- **GitHub**: issues live in the repo's GitHub Issues (uses the `gh` CLI)
-- **GitLab**: issues live in the repo's GitLab Issues (uses the [`glab`](https://gitlab.com/gitlab-org/cli) CLI)
+- **Yandex Tracker**: record the project queue and the available Tracker MCP/CLI; use Arcanum for pull requests
 - **Local markdown**: issues live as files under `.scratch/<feature>/` in this repo (good for solo projects or repos without a remote)
 - **Other** (Jira, Linear, etc.): ask the user to describe the workflow in one paragraph; the skill will record it as freeform prose
 
-Record the choice in `docs/agents/issue-tracker.md`. The GitHub and GitLab templates carry a "PRs as a request surface" flag, defaulted **off**. Leave it off and don't raise it: a user who wants external PRs in the triage queue can flip the flag in the file later.
+Record the choice in `docs/agents/issue-tracker.md`. The Tracker template carries an "Arcanum PRs as a request surface" flag, defaulted **off**. Leave it off and don't raise it: a user who wants external PRs in the triage queue can flip the flag in the file later.
 
 **Section B: Triage label vocabulary.** Skip this section entirely if the `triage` skill isn't installed (exploration told you), since an uninstalled skill needs no labels.
 
@@ -86,6 +85,10 @@ The block:
 ```markdown
 ## Agent skills
 
+### Version control
+
+Use Arc for this checkout and Arcanum for pull requests. Follow the installed `arc` skill; consult Arc CLI help when it is unavailable.
+
 ### Issue tracker
 
 [one-line summary of where issues are tracked]. See `docs/agents/issue-tracker.md`.
@@ -101,12 +104,11 @@ The block:
 
 Include the `### Triage labels` sub-block, and write `docs/agents/triage-labels.md`, only when `triage` is installed and Section B ran. When it isn't, both are omitted.
 
-When Section B ran on GitHub or GitLab, create each configured label the tracker lacks (`gh label create` / `glab label create`).
+When Section B ran, record how each triage role maps to the configured tracker's tags or statuses; use its documented operations for authorized changes.
 
 Then write the docs files using the seed templates in this skill folder as a starting point:
 
-- [issue-tracker-github.md](./issue-tracker-github.md): GitHub issue tracker
-- [issue-tracker-gitlab.md](./issue-tracker-gitlab.md): GitLab issue tracker
+- [issue-tracker-tracker.md](./issue-tracker-tracker.md): Yandex Tracker issues and Arcanum PRs
 - [issue-tracker-local.md](./issue-tracker-local.md): local-markdown issue tracker
 - [triage-labels.md](./triage-labels.md): label mapping (only if `triage` is installed)
 - [domain.md](./domain.md): domain doc consumer rules + layout

@@ -18,7 +18,7 @@ The marketplace also ships `mattpocock-skills-arc-version`, a separate Arc-adapt
 
 ## Additional plugin
 
-- `mattpocock-skills-arc-version` - the 27 stable skills from [Matt Pocock's `skills`](https://github.com/mattpocock/skills) plugin, pinned to [49dd158](https://github.com/mattpocock/skills/commit/49dd158d1076134a641b33efb035946536778336) (upstream 1.3.1). Skill files preserve the upstream text and formatting exactly except for Git-to-Arc adaptations; `in-progress` and `misc` remain excluded, matching the upstream plugin manifest.
+- `mattpocock-skills-arc-version` - the 27 stable skills from [Matt Pocock's `skills`](https://github.com/mattpocock/skills) plugin, pinned to [49dd158](https://github.com/mattpocock/skills/commit/49dd158d1076134a641b33efb035946536778336) (upstream 1.3.1). Skill files preserve the upstream text and formatting exactly except for Arc, Arcanum, Tracker, and CI adaptations; `in-progress` and `misc` remain excluded, matching the upstream plugin manifest.
 
 ## Layout
 
@@ -134,6 +134,13 @@ Matt Pocock's license and the `pr` skill's HumanLayer credit ship inside the sep
 - Domain documents now use `GLOSSARY.md`, `GLOSSARY-MAP.md`, and `GLOSSARY-FORMAT.md`. Before using the updated workflows in an existing project, migrate its old `CONTEXT.md` / `CONTEXT-MAP.md` domain documents and their pointers. This update does not edit consumer projects.
 - `implement-spec` uses Arc worktrees and leaves Arcanum PRs unpublished until explicitly requested. The installed `arc` skill is preferred; Arc CLI help is the fallback.
 
+### Arc-only follow-up — plugin 2.0.1
+
+- Code/history operations use Arc; PR operations use Arcanum. The former hosted-Git tracker templates are replaced by a Yandex Tracker template, with local Markdown still supported.
+- `setup-matt-pocock-skills` records the queue and available Tracker tools; issue creation requires an explicit request. Tracker and Arcanum identifiers remain separate.
+- `wizard` retains local `.env` handling; CI secret provisioning follows the project's documented store/tool or manual steps. The hosted-Git CLI helpers are removed.
+- Repository URLs in attribution and package metadata identify upstream sources; they are not workflow dependencies.
+
 ### Skill dependencies
 
 Install the Matt Pocock plugin as a unit. Copying a single skill directory does not install its sibling dependencies:
@@ -148,7 +155,7 @@ Install the Matt Pocock plugin as a unit. Copying a single skill directory does 
 | `wayfinder`                     | `research`, `prototype`, `grilling`, `domain-modeling` by ticket type |
 | `retro`                         | `writing-for-agents`                                                  |
 
-The tracker workflows also require the project configuration written by `setup-matt-pocock-skills`; that skill is included. `ask-matt` routes the user to the bundled workflows. The `pr` skill embeds its credited `show-me` guidance, so installing `show-me` is unnecessary. Root skills require no other skill installation; `brainstorming-handoff` includes its builder-check prompt and companion and does not call `superpowers:writing-plans`.
+Tracker and Arcanum operations require their configured MCP/CLI tools; the installed `arc` and `arcanum-go` skills are used when available. The tracker workflows also require the project configuration written by `setup-matt-pocock-skills`; that skill is included. `ask-matt` routes the user to the bundled workflows. The `pr` skill embeds its credited `show-me` guidance, so installing `show-me` is unnecessary. Root skills require no other skill installation; `brainstorming-handoff` includes its builder-check prompt and companion and does not call `superpowers:writing-plans`.
 
 Run `npm test` for the companion authorization/asset confinement and wizard `.env` regression checks. Native Windows behavior and real agent sessions are not covered.
 

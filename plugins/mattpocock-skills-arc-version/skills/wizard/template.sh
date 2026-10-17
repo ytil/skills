@@ -25,8 +25,6 @@ TOTAL_STAGES=0
 _STAGE_INDEX=0
 ENV_FILE="${ENV_FILE:-.env}"
 WRITTEN_ENV=()    # KEYs written to ENV_FILE this run
-WRITTEN_SECRET=() # secret NAMEs set this run
-SKIPPED=()        # things we couldn't do (e.g. gh missing)
 
 # _clear wipes the terminal so only the current step is on screen. No-op when
 # output isn't a terminal, so piped logs stay readable.
@@ -150,44 +148,11 @@ write_env() {
   printf '  %s✓ wrote%s %s → %s\n' "$GREEN" "$RESET" "$key" "$ENV_FILE"
 }
 
-# set_secret NAME VALUE sets a GitHub Actions repo secret via gh. Falls back
-# to a warning (and records it) if gh is unavailable or unauthenticated.
-set_secret() {
-  local name="$1" value="$2"
-  if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-    if printf '%s' "$value" | gh secret set "$name" >/dev/null 2>&1; then
-      WRITTEN_SECRET+=("$name")
-      printf '  %s✓ set%s GitHub secret %s\n' "$GREEN" "$RESET" "$name"
-      return
-    fi
-  fi
-  SKIPPED+=("GitHub secret $name (set it manually: gh secret set $name)")
-  warn "skipped GitHub secret $name: gh not ready; set it later"
-}
-
-# set_var NAME VALUE sets a GitHub Actions repo variable (non-secret).
-set_var() {
-  local name="$1" value="$2"
-  if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-    if gh variable set "$name" --body "$value" >/dev/null 2>&1; then
-      printf '  %s✓ set%s GitHub variable %s\n' "$GREEN" "$RESET" "$name"
-      return
-    fi
-  fi
-  SKIPPED+=("GitHub variable $name")
-  warn "skipped GitHub variable $name, gh not ready; set it later"
-}
-
 # finish clears, then shows a closing summary of everything configured.
 finish() {
   _clear
   printf '\n%s%s  ✓ Setup complete%s\n' "$BOLD" "$GREEN" "$RESET"
   (( ${#WRITTEN_ENV[@]} ))    && note "wrote ${#WRITTEN_ENV[@]} value(s) to $ENV_FILE: ${WRITTEN_ENV[*]}"
-  (( ${#WRITTEN_SECRET[@]} )) && note "set ${#WRITTEN_SECRET[@]} GitHub secret(s): ${WRITTEN_SECRET[*]}"
-  if (( ${#SKIPPED[@]} )); then
-    printf '\n'; warn "still to do by hand:"
-    for s in "${SKIPPED[@]}"; do note "  - $s"; done
-  fi
   printf '\n'
 }
 
@@ -206,7 +171,7 @@ banner "Stripe setup"
 
 # ── Example stage: replace with your real steps ───────────────────────────
 stage "Stripe: API keys"
-say "We'll grab your Stripe test keys and store them for local dev + CI."
+say "We'll grab your Stripe test keys and store them for local development."
 open_url "https://dashboard.stripe.com/test/apikeys"
 step "On the API keys page, copy the Publishable key (starts pk_test_)."
 ask STRIPE_PUBLISHABLE_KEY "Paste the publishable key:"
@@ -214,7 +179,6 @@ step "Click 'Reveal test key' on the Secret key row, then copy it."
 ask_secret STRIPE_SECRET_KEY "Paste the secret key:"
 write_env STRIPE_PUBLISHABLE_KEY "$STRIPE_PUBLISHABLE_KEY"
 write_env STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"
-set_secret STRIPE_SECRET_KEY "$STRIPE_SECRET_KEY"   # CI needs this one
 # ──────────────────────────────────────────────────────────────────────────
 
 finish

@@ -14,4 +14,4 @@ Run typechecking regularly, single test files regularly, and the full test suite
 
 Once done, call the Skill tool with "code-review" to review the work.
 
-Commit your work to the current branch.
+Commit your work to the current Arc branch using the installed `arc` skill; if unavailable, consult `arc commit --help`.

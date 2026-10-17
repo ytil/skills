@@ -15,7 +15,7 @@ Personal agent-skills monorepo, shipped as a Claude Code + Codex plugin marketpl
 ## Formatting & checking
 
 - `npm run format` — Prettier, 4-space indent (see `package.json`). It walks the **whole repo**, so a run after touching one skill can reformat others; check the diff before committing.
-- `plugins/mattpocock-skills-arc-version/skills/` is excluded via `.prettierignore`: preserve its upstream text and formatting byte-for-byte except for deliberate Git-to-Arc edits.
+- `plugins/mattpocock-skills-arc-version/skills/` is excluded via `.prettierignore`: preserve its upstream text and formatting byte-for-byte except for deliberate Arc, Arcanum, Tracker, and CI adaptations.
 - `npm test` — focused companion-server and wizard regression checks (Node.js 22+, Bash); the companion test binds a loopback port. No build.
 - Manifest versions — after bumping, confirm all three agree:
   `grep -h '"version"' .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json`
