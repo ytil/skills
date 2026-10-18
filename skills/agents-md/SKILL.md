@@ -1,59 +1,49 @@
 ---
 name: agents-md
-description: Write or review AGENTS.md and CLAUDE.md files — the always-loaded context files that onboard a coding agent to a repository. Use whenever the user wants to create, audit, shorten, fix, or review an AGENTS.md or CLAUDE.md, set up project/agent onboarding instructions, consolidate scattered agent rules into one place, or asks why an agent keeps ignoring its instructions or how to structure project context for coding agents — even when they only say "add a CLAUDE.md", "clean up our agent rules", or "the agent isn't following our conventions."
+description: Write or review AGENTS.md and CLAUDE.md files. Use when creating, auditing, shortening, or fixing repository instructions, setting up agent onboarding, consolidating rules, or investigating why an agent ignores project conventions.
 ---
 
-# AGENTS.md / CLAUDE.md — author & reviewer
+# AGENTS.md / CLAUDE.md — создание и аудит
 
-`AGENTS.md` (the cross-tool standard, read here by OpenAI Codex) and `CLAUDE.md` (Claude Code's variant) are the same genre: a plain-Markdown file loaded into **every** agent session to onboard it to a repository. This skill helps you write one from scratch or review an existing one. The principles apply to any tool in this genre; the mechanics in `references/cross-tool-reference.md` cover Claude Code and Codex specifically.
+Эти Markdown-файлы задают постоянные инструкции для работы агента с репозиторием. Какие файлы попадут в контекст и когда, зависит от инструмента, рабочей директории и области действия. Это один из источников контекста наряду с кодом, памятью, skills и запросом пользователя.
 
-The whole skill rests on one fact: **a model is stateless, and this file is the main thing it reads about the project on every single run.** That makes it the highest-leverage text in the repo — and it means every line is a standing tax on every session. As the instruction count climbs, adherence drops _uniformly_: the model doesn't ignore only the new lines, it follows all of them a little less. And the cost isn't only dilution — over-prescription actively degrades output: a capable model follows one short instruction about as well as ten enumerated ones, so the extra nine buy nothing and cost adherence everywhere else. So the goal is never "write down everything." It's "write down the few things the agent must know and would otherwise get wrong — and nothing else."
+Цель — сохранить сведения, без которых агент ошибётся, и убрать ненужные повторы. Лишние и противоречивые инструкции могут ухудшать результат, но сокращение само по себе не доказывает улучшения. Эффект зависит от модели, оболочки и задач; оценивай изменения по поведению агента.
 
-## Principles
+## Принципы
 
-The shared core for both writing and reviewing. Each is a line you should be able to defend.
+1. **Оценивай пользу и цену пропуска.** Часто нужные сведения заслуживают места в общем файле. Редкое критичное ограничение тоже сохраняй либо размещай там, где агент обнаружит его до опасного действия.
+2. **Покрой WHAT / WHY / HOW / BOUNDARIES по необходимости.** Назначение проекта, неочевидные границы компонентов, причины решений, реальные команды и ограничения. Для проверок укажи команду, условие запуска и критерий успеха. Это вопросы для исследования, а не обязательные заголовки или полный каталог директорий.
+3. **Держи контекст компактным.** Claude Code рекомендует менее 200 строк на файл; это ориентир, не порог качества. Учитывай суммарный объём загружаемых файлов и лимиты инструмента. Не удаляй необходимое ради числа строк.
+4. **Предпочитай проверяемые ссылки копиям.** Путь и имя символа обычно устойчивее номера строки. Ссылки тоже устаревают: проверяй существование и содержание цели. Короткая команда или пример допустимы, если предотвращают ошибку лучше ссылки.
+5. **Загружай детали по условию.** Для специализированной процедуры используй skill, для локальных правил — поддерживаемую инструментом область действия. Обычная ссылка должна объяснять, когда читать документ. Импорты Claude организуют текст, но загружают его вместе с исходным файлом и не экономят контекст.
+6. **Отдавай механические проверки инструментам.** Форматирование и проверяемый стиль закрепляй форматтером, линтером или CI. В инструкции оставляй нужную команду и соглашения, которые инструменты не проверяют.
+7. **Формулируй конкретно и объясняй неочевидное.** «После изменения схемы запусти `pnpm test:migrations`» полезнее «проверяй работу». Для необычного ограничения коротко укажи причину.
+8. **Различай конфликт и локальное исключение.** Проверяй область действия и приоритеты конкретного инструмента. В Codex более вложенные инструкции имеют приоритет над общими; намеренное исключение не нужно удалять как противоречие.
+9. **Исследуй и редактируй осмысленно.** Автогенерация допустима как черновик. Проверяй факты по репозиторию; записывай особенности, ловушки и дорогие для повторного поиска сведения вместо пересказа очевидного кода.
+10. **Выбирай правильную область действия.** Общие правила — в корне, отличающиеся правила — рядом с соответствующим кодом. Не создавай файл в каждом пакете без необходимости. Обязательное ограничение не должно зависеть только от необязательного вызова skill.
+11. **Удаляй подтверждённые дубли, сохраняй нужное поведение.** Не предполагай одинаковый системный промпт или самопроверку во всех оболочках. Правило о запуске проверки, порядке действий или формате отчёта может быть полезным. Убирай его, если оно уже надёжно обеспечено или не меняет поведение; критичные ограничения подкрепляй техническими средствами.
 
-1. **Every line is loaded every session — so earn each one.** If a line isn't useful in _most_ sessions, it belongs elsewhere (see #5) or nowhere.
-2. **Cover WHAT, WHY, HOW, BOUNDARIES.** _What_ = stack + a map of where things live. _Why_ = what the major pieces are for, so the agent grasps intent. _How_ = the real commands to build, test, run, and **verify** — name what proves a change works _here_ (the smoke test, the health check, what "done" means), never an instruction _to_ verify; that one's the harness's (#11). _Boundaries_ = what's unsafe to do unattended **in this repo specifically** — not the generic "ask before risky actions" the harness already supplies (#11).
-3. **Stay short.** Aim well under ~150 lines; many excellent files are under 60, and Claude Code's own guidance targets <200. Shorter file → better adherence — and where a tool caps the merged instruction chain by size, bloat stops being mere dilution: it can evict a nested file from the prompt outright (see the cross-tool reference for which tools cap and at what).
-4. **Prefer pointers to copies.** Reference `path/to/file.ts:42`, imports, and READMEs instead of pasting code, schemas, or command output — copies rot, pointers don't.
-5. **Use progressive disclosure.** Push task- or area-specific detail out of the always-loaded file into imported topic docs, path-scoped rule files, or skills — then point to them so the agent reads them only when relevant. (Every tool spells these differently, and not all of them defer loading — see the cross-tool reference.) The dividing line: **facts the agent holds constantly go in the file; procedures (deploy/release checklists) go in skills.**
-6. **Don't send an agent to do a linter's job.** Formatting and mechanical style belong to a deterministic formatter wired to a hook, not to context the model burns tokens re-reading. A few conventions the agent genuinely can't infer are fine; an exhaustive style guide is not.
-7. **Be specific and verifiable — and give the reason when it isn't obvious.** "Run `pnpm test`" beats "test your changes"; "handlers live in `src/api/handlers/`" beats "keep files organized." Vague instructions get ignored. For a non-obvious rule, attach the why in a few words — "don't edit `vendor/`: it's a fork, edits get clobbered on update" — the model generalizes from the reason to cases you didn't enumerate.
-8. **No contradictions.** When two lines (or a root and a nested file) conflict, the agent picks one arbitrarily. Reconcile them.
-9. **Craft it by hand; trust in-context learning.** Don't auto-generate and walk away, and don't codify what a couple of searches of a consistent codebase would already teach the agent. Curation is the point.
-10. **Keep it universally relevant.** These files are injected with an "ignore if not relevant" caveat — padding with rarely-relevant content trains the agent to discount the whole file.
-11. **Don't restate what the harness already tells the model.** Generic behavior steering — be concise, don't over-engineer, verify your work, ask before irreversible actions, show your reasoning — ships in the coding agent's own system prompt. A repo-level copy spends adherence on a duplicate instead of on the one fact only this repo knows.
+## Область изменений и разрешение
 
-## Changing the file: propose first, apply only with the human's OK
+Запрос на аудит означает отчёт с предложениями без правок. Если пользователь просит создать или исправить файл либо уже одобрил предложения, выполняй работу в этой области без повторного согласования. При неясном намерении покажи конкретный вариант и уточни недостающее решение. Сохраняй существующие symlink и единый источник истины.
 
-Whether you're reviewing, editing, or writing one of these files, treat it as the user's hand-curated artifact — not yours to rewrite or create silently. Before you write or change an `AGENTS.md`/`CLAUDE.md`, **show the concrete edits (or the draft) and get the human's sign-off — don't modify the file on your own without them seeing it first.** This isn't ceremony: it's the highest-leverage text in the repo, a line you'd cut may be there for a reason you can't see, and a silent change ships into _every_ future session before anyone notices it's wrong. "Here's what I'd cut and add, and why — want me to apply it?" is cheap, and it keeps the human in control of their own onboarding doc.
+## Аудит существующих инструкций
 
-## Reviewing an existing file
+1. Прочитай файл и применимые вложенные инструкции, импорты и правила областей. Определи целевые инструменты. Для вопросов загрузки, приоритетов и совместимости прочитай `references/cross-tool-reference.md`.
+2. Проверь команды, пути, ограничения и архитектурные утверждения по репозиторию. Найди не только устаревший текст, но и недостающие сведения. Перед запуском команды выясни побочные эффекты; используй безопасную проверку или явно отметь, что команда не запускалась.
+3. Пройди `references/review-checklist.md`. Для каждого замечания отличай подтверждённую ошибку от гипотезы и авторского предпочтения.
+4. Дай вердикт, затем замечания по важности: проблема → последствия → исправление, с `file:line`, где это помогает. Заверши списком «убрать / оставить / добавить» и укажи, какие проверки выполнены.
+5. Если изменения разрешены, внеси их и выполни проверку результата из checklist. Статическую проверку и проверку поведения агента отчитай отдельно.
 
-1. Read the target file — plus any nested instruction files, imports, and path-scoped rules it pulls in (conflicts and bloat hide across files). Then **verify it against the actual repo** — don't judge the text in a vacuum: confirm the commands, paths, and architecture it claims are real and current, and notice what the agent needs that the file _omits_. The most expensive misses live here — a stale command or a half-complete map costs more than a wordy sentence.
-2. Walk **`references/review-checklist.md`**, which turns the principles above into concrete checks with how-to-detect and how-to-fix notes.
-3. Report findings roughly in the shape below — adapt it to what the file actually warrants. Per **"Changing the file"** above, these are _proposals_ — apply them only after the user signs off; never edit the file mid-review.
+## Создание нового файла
 
-**Review output** — three beats, in this order:
+1. Найди реальные команды в конфигурации проекта и CI. Установи безопасный способ установки, запуска и проверки для типичных задач; используй ссылки на существующие инструкции, где достаточно ссылки.
+2. Изучи точки входа и границы компонентов. Запиши назначение проекта и только ту карту ответственности, которую трудно правильно вывести из дерева файлов.
+3. Найди нестандартные соглашения, ограничения и ловушки. Спроси пользователя лишь о существенных неизвестных, которые нельзя установить по репозиторию.
+4. Собери короткий черновик по принципам выше. Для совместимости Codex и Claude Code прочитай `references/cross-tool-reference.md`; не дублируй содержимое между файлами.
+5. Пройди `references/review-checklist.md`, сохрани файл в пределах разрешённой задачи и отчитай проверенные факты, оставшиеся неизвестные и результаты проверки поведения, если она проводилась.
 
-- **Verdict** — one line: is it in good shape, and what's the single biggest problem?
-- **Findings**, most to least important — for each: what's wrong → why it costs you → the fix, with `file:line` where it helps. Cite the principle number when it's not self-evident.
-- **Cut / keep / add** — the lines not earning their place, and the missing WHAT/WHY/HOW/BOUNDARIES the agent needs.
+## Справочники
 
-## Writing a new file
-
-The failure mode here is emitting a generic template full of plausible guesses — which is exactly the auto-generation anti-pattern (#9). Avoid it by **exploring first, writing second.** The value is in the real, discovered facts, not the headings.
-
-1. **Discover the real commands.** Read `package.json` scripts, `Makefile`/`justfile`, `pyproject.toml`, CI config — don't guess how to build/test/lint/run. Where you can, run them once to confirm they actually work.
-2. **Map the architecture.** Skim the tree and the entry points; capture where the important things live as pointers (`dir/`, `file:line`), not prose.
-3. **Write down only what searching wouldn't reveal.** Infer conventions from the existing code, then record just the non-obvious rule, the gotcha that burned someone, the "always do X before Y," and which commands are unsafe to run unattended here. Ask the user for these — they're often nowhere in the code.
-4. **Assemble lean**, in roughly WHAT+map → WHY → HOW → conventions/gotchas/boundaries → pointers order, applying every principle above. If you can't justify a line as "needed in most sessions," cut it.
-5. **Wire up interop** when both Claude Code and Codex are in play — see `references/cross-tool-reference.md`. Claude Code reads `CLAUDE.md`, _not_ `AGENTS.md`; keep one source of truth and import/symlink rather than duplicate.
-
-After drafting, run the review checklist on your own output as a self-check — then show the user the draft and write it into the repo only once they're happy (see **"Changing the file"** above).
-
-## References
-
-- `references/review-checklist.md` — the operational checklist for review (and a self-check after writing).
-- `references/cross-tool-reference.md` — the mechanics per tool where known: which file each tool reads, locations & load order, merge/precedence and size caps, how to defer loading, AGENTS.md↔CLAUDE.md interop, monorepo nesting.
+- `references/review-checklist.md` — проверка текста, полноты, безопасности и результата изменений.
+- `references/cross-tool-reference.md` — механика Codex и Claude Code, источники с датой проверки и границы исследовательских выводов.

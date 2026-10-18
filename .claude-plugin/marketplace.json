@@ -10,7 +10,7 @@
             "name": "ytil-skills",
             "source": ".",
             "description": "All skills from this repo, including JavaScript data structures, error handling, and creational and structural GoF patterns.",
-            "version": "1.9.1"
+            "version": "1.9.2"
         },
         {
             "name": "mattpocock-skills-arc-version",

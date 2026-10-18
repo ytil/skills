@@ -1,45 +1,44 @@
-# Cross-tool reference
+# Codex и Claude Code: загрузка и совместимость
 
-The mechanical facts behind the principles: where these files live, how they load, and how to keep one source of truth across tools. Verify version-specific details against current docs if a project depends on them — tool behavior drifts.
+Проверено по официальной документации **2026-10-18**. Это сведения о конкретных инструментах, а не универсальная механика всех агентов. При изменении версий или расхождении с наблюдаемым поведением перепроверь источник и обнови дату соответствующего утверждения.
 
-## AGENTS.md (the cross-tool standard)
+## Codex — AGENTS.md
 
-- **Format:** plain Markdown, no required schema — "a README for agents." Use whatever headings fit.
-- **Read by:** many coding agents; this reference covers **OpenAI Codex**, the one it documents in depth. (Notably **not** Claude Code — see interop below.) Other tools implementing the standard are out of scope here — verify their mechanics against their own docs.
-- **Monorepos:** place an `AGENTS.md` in each package — the root file for repo-wide facts, each nested file for its own package.
-- **Merge & precedence:** don't assume "nearest file wins." Codex **concatenates the whole chain** from the git root down, joined by blank lines, stopping when it reaches your current directory; closer files win only because they land _later_ in the combined prompt. Every level is still in context, so a root-vs-package contradiction is a live conflict the model resolves arbitrarily — it is not cleaned up by proximity (checklist check 8). Codex also loads a global `~/.codex/AGENTS.md` ahead of the project chain, and an `AGENTS.override.md` takes precedence over the `AGENTS.md` beside it at any level. Verified for Codex; other tools implementing the standard differ — confirm before relying on precedence.
-- **Size cap:** Codex stops adding files once the concatenated chain reaches `project_doc_max_bytes` (32 KiB default), so an oversized root file can silently push a package's own instructions out of the prompt entirely. Trim the root or raise the limit. Claude Code has no equivalent cap — it loads the whole chain and you pay in adherence instead.
-- **See what actually loaded:** `codex --ask-for-approval never "Summarize the current instructions."` makes Codex echo its guidance in precedence order.
-- **Popular sections:** project overview, build/test commands, code-style pointers, testing instructions, security considerations, commit/PR conventions, gotchas. (Treat "code style" with principle #6 in mind — point to the formatter, don't transcribe it.)
+- Формат — обычный Markdown без обязательной схемы.
+- При запуске Codex ищет глобальный файл в `$CODEX_HOME` (обычно `~/.codex`): сначала `AGENTS.override.md`, иначе `AGENTS.md`; используется первый непустой файл.
+- Затем собирает цепочку от корня проекта до текущей рабочей директории. На каждом уровне выбирает не более одного файла: `AGENTS.override.md`, затем `AGENTS.md`, затем имена из `project_doc_fallback_filenames`. Если корень проекта не найден, проверяет текущую директорию.
+- Файлы объединяются от общего к частному. **Более вложенные инструкции имеют приоритет над более общими.** Текст родительского файла остаётся в контексте, но намеренное локальное исключение соответствует установленной семантике. Возможная ошибка модели при исполнении не отменяет этот приоритет.
+- Начальная загрузка заканчивается на рабочей директории; не считай все файлы ниже неё автоматически загруженными. При переходе к другому участку проверь применимые инструкции и возможности установленной версии.
+- Общий бюджет задаёт `project_doc_max_bytes`, по умолчанию **32 KiB**. Большой корневой файл может вытеснить вложенные инструкции. Разделение на несколько файлов одной загружаемой цепочки не обходит общий лимит.
+- В монорепозитории создавай вложенные файлы там, где нужны отличающиеся правила, а не в каждом пакете автоматически.
 
-## CLAUDE.md (Claude Code)
+Для диагностики запусти новую сессию из нужной директории:
 
-### Locations & load order (broad → specific; later overrides nothing, all are concatenated)
+```sh
+codex --ask-for-approval never "Summarize the current instructions."
+codex --cd services/payments --ask-for-approval never "List the instruction sources you loaded."
+```
 
-| Scope          | Location                                                                                                                                           | Loaded                     |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| Managed policy | macOS `/Library/Application Support/ClaudeCode/CLAUDE.md`, Linux/WSL `/etc/claude-code/CLAUDE.md`, Windows `C:\Program Files\ClaudeCode\CLAUDE.md` | Always, can't be excluded  |
-| User           | `~/.claude/CLAUDE.md`                                                                                                                              | Always (all your projects) |
-| Project        | `./CLAUDE.md` or `./.claude/CLAUDE.md`                                                                                                             | Always (shared via VCS)    |
-| Local          | `./CLAUDE.local.md` (gitignore it)                                                                                                                 | Always (just you)          |
+Второй путь — пример: замени существующим каталогом. Пересказ модели помогает проверить настройку, но не является точным дампом контекста. Для аудита используй доступные логи сессии. После изменения настройки загрузки начни новую сессию.
 
-- Files in the directory hierarchy **above** the working dir load in full at launch, root-down (closer-to-cwd is read last). Files in **subdirectories** load on demand when Claude reads files there.
-- **Size target:** under 200 lines. Longer files reduce adherence. CLAUDE.md loads in full regardless of length — there's no truncation saving you.
-- **HTML comments** (`<!-- maintainer note -->`) are stripped before the content enters context — free notes for humans, zero token cost. Comments inside code blocks are preserved.
-- **It's context, not enforcement.** Delivered as a user message after the system prompt; Claude usually follows it but isn't bound by it. For hard guarantees use a hook or `permissions.deny`.
-- `/init` generates a starting file by analyzing the codebase (and, with `CLAUDE_CODE_NEW_INIT=1`, runs an interactive multi-phase flow). Treat its output as a _draft to curate_, not a finished file — review it against principle #9.
-- `/doctor` (Claude Code only, v2.1.206+) adds a trim check for a checked-in `CLAUDE.md`: it flags content Claude can derive from the codebase — directory trees, dependency lists, architecture overviews — keeps pitfalls, rationale, and conventions that differ from tool defaults, and applies its proposals only after the user confirms. **You can't run it** — it opens an interactive panel; suggest it to the user as a cheap first pass instead. (The shell's `claude doctor` is installation diagnostics only — no trim check.) Two things to know when reading its proposals: it only ever _cuts_, so it can't find the stale command or the missing "how to run it" that a real review must; and its "derivable" heuristic doesn't separate a pasted directory tree (a copy — cut it, check 4) from a map of which layer does what (a pointer — check 3 wants it kept). Side with check 3 there.
+Источник: [OpenAI — Custom instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 
-### `@import` syntax
+## Claude Code — CLAUDE.md
 
-- `@path/to/file` pulls another file in. Both relative (resolved against the importing file) and absolute paths work; `@~/...` reaches your home dir.
-- Recursive, **max depth 4 hops**.
-- Imported files **load at launch into context** — imports help _organization_, they do **not** reduce context. To actually defer loading, use path-scoped rules or skills.
+- Основные области: управляемые организацией инструкции, пользовательский `~/.claude/CLAUDE.md`, проектный `CLAUDE.md` или `.claude/CLAUDE.md`, локальный `CLAUDE.local.md`. Локальный файл не публикуй в VCS.
+- Файлы в иерархии над рабочей директорией загружаются при старте; файлы поддиректорий — при чтении файлов в этих областях. Не переноси на Claude правило разрешения конфликтов Codex: согласуй пересекающиеся инструкции явно.
+- Рекомендация — **менее 200 строк** на `CLAUDE.md`. Это не порог отсечения: файл до **4 MiB** загружается целиком, более крупный пропускается.
+- Лимит первых 200 строк или 25 KB относится к индексу автоматической памяти `MEMORY.md`, а не к `CLAUDE.md`. Память и проектные инструкции — разные источники контекста.
+- `CLAUDE.md` — инструкции, а не средство гарантированного запрета. Для обязательных ограничений используй подходящие permissions, sandbox, hooks или серверные проверки, учитывая их область действия.
+- `/init` создаёт стартовый файл; результат нужно проверить по репозиторию.
+- `/doctor` предлагает сокращения. **`/doctor prompt-audit`** проверяет устаревшие инструкции, отсутствующие файлы/команды и противоречия; выдаёт предложения без автоматического применения. Не описывай весь аудит как «только удаляет». Доступность зависит от установленной версии; для запуска нужен доступ к сессии Claude Code.
+- `/context` помогает проверить загрузку. Самопересказ модели не заменяет инспекцию доступных источников контекста.
 
-### `.claude/rules/` (modular & path-scoped instructions)
+### Импорты и правила областей
 
-- Drop topic files in `.claude/rules/` (e.g. `testing.md`, `api-design.md`); all `.md` are discovered recursively.
-- Add `paths:` frontmatter to scope a rule to matching files so it loads **only** when Claude touches them — the main lever for keeping the always-on file small:
+`@path/to/file` импортирует содержимое; относительный путь разрешается от импортирующего файла. Поддерживаются абсолютные пути и `@~/…`; максимальная глубина вложенных импортов — четыре перехода. Импорт загружается вместе с исходным файлом: это организация содержимого, а не экономия контекста.
+
+Markdown-файлы `.claude/rules/` без `paths` загружаются безусловно. Для правил конкретных файлов используй frontmatter:
 
 ```markdown
 ---
@@ -47,33 +46,32 @@ paths:
     - "src/api/**/*.{ts,tsx}"
 ---
 
-# API rules
-
-- All endpoints validate input.
+- Проверяй входные данные каждого API endpoint.
 ```
 
-- Rules without `paths:` load every session at the same priority as `.claude/CLAUDE.md`. User-level `~/.claude/rules/` applies everywhere.
+Такие правила загружаются при работе с подходящими файлами. Для специализированной процедуры подходит skill; для обычного документа укажи явное условие чтения. Критичные ограничения должны быть доступны до действия, которое они ограничивают.
 
-## Interop: one source of truth, no duplication
+Источники: [Claude Code — Memory](https://code.claude.com/docs/en/memory), [Best practices](https://code.claude.com/docs/en/best-practices).
 
-Claude Code reads `CLAUDE.md`, not `AGENTS.md`. When a repo already has `AGENTS.md` for Codex, don't maintain two copies — point one at the other:
+## Один источник истины для двух инструментов
 
-**Import (recommended — lets you add Claude-only notes):**
+Claude Code не загружает `AGENTS.md` автоматически как свой файл инструкций. Если основное содержимое уже в `AGENTS.md`, создай `CLAUDE.md` с импортом:
 
 ```markdown
 @AGENTS.md
-
-## Claude Code
-
-Use plan mode for changes under `src/billing/`.
 ```
 
-**Symlink (when no Claude-specific content is needed):**
+В этом же файле допустимы дополнительные правила только для Claude. Codex не обрабатывает такой импорт автоматически: обратная текстовая ссылка из `AGENTS.md` не равноценна.
 
-```bash
-ln -s AGENTS.md CLAUDE.md
-```
+Если содержимое одинаковое, подходит symlink. **Для symlink допустимы оба направления**: в этом репозитории `AGENTS.md` ссылается на `CLAUDE.md`; сохраняй эту структуру. Не перезаписывай существующий файл командой создания ссылки. На Windows возможность создания symlink зависит от прав и Developer Mode; импорт со стороны Claude часто проще.
 
-(On Windows a symlink needs Administrator/Developer Mode — prefer the `@AGENTS.md` import there.)
+## Основания рекомендаций и их границы
 
-Direction matters: put the substance in `AGENTS.md` and have `CLAUDE.md` import it, not the reverse. Claude Code can import; Codex has no import mechanism, so a Codex-side pointer to `CLAUDE.md` would leave it with only the pointer. With `CLAUDE_CODE_NEW_INIT=1`, `/init` reads an existing `AGENTS.md` and folds the relevant parts into the generated `CLAUDE.md`.
+Источники проверены **2026-10-18**. Механика выше основана на документации; советы по объёму и составу — рекомендации, эффективность которых нужно проверять на задачах.
+
+- [Anthropic — The new rules of context engineering for Claude 5 generation models, 2026-07-24](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models): лёгкий CLAUDE.md, особенности проекта, skills и загрузка по необходимости. Сообщённое сокращение системного промпта более чем на 80% без измеренного ухудшения относится к внутренним coding evaluations автора; это не универсальная норма сокращения пользовательских инструкций.
+- [Gloaguen et al. — Evaluating AGENTS.md, v3, 2026-09-29](https://arxiv.org/abs/2602.11988v3): в исследованных условиях контекстные файлы в целом не улучшили успешность и увеличили стоимость вывода в среднем более чем на 20%; инструкции при этом обычно выполнялись. Авторы рекомендуют оценивать изменения экспериментально.
+- [Lulla et al. — On the Impact of AGENTS.md Files on the Efficiency of AI Coding Agents, v2, 2026-03-30](https://arxiv.org/abs/2601.20404v2): на 10 репозиториях и 124 PR наличие файла связано со снижением медианного времени на 28,64% и выходных токенов на 16,58%. Постановка и метрики отличаются от предыдущей работы; результаты не доказывают пользу любого файла.
+- [HumanLayer — Writing a good CLAUDE.md, 2025-11-25](https://www.humanlayer.dev/blog/writing-a-good-claude-md): исходный практический источник этого скилла. Его эвристики не заменяют актуальную документацию инструментов или проверку на собственных задачах.
+
+Нет установленного здесь универсального порога 60/150 строк, закона равномерного ухудшения соблюдения всех инструкций или эквивалентности одной короткой инструкции десяти подробным. Практический критерий — правильность результата и соблюдение нужных ограничений при разумных затратах.
